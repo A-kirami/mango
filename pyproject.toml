@@ -1,0 +1,49 @@
+[tool.poetry]
+name = "mango-odm"
+version = "0.0.0"
+description = "🥭 Async MongoDB ODM with type hints in Python"
+authors = ["Akirami <Akiramiaya@outlook.com>"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/A-kirami/mango"
+packages = [
+  {include = "mango"},
+  {include = "mango/py.typed"},
+]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+motor = "^3.0.0"
+pydantic = "^1.9.0"
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.1.0"
+isort = "^5.10.1"
+
+[tool.poetry.group.test]
+optional = true
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.1.2"
+pytest-cov = "^3.0.0"
+allure-pytest = "^2.9.45"
+pytest-asyncio = "^0.18.0"
+hypothesis = "^6.43.3"
+pytest-sugar = "^0.9.5"
+
+[tool.black]
+target-version = ["py310"]
+
+[tool.isort]
+profile = 'black'
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+addopts = "--cov=mango --cov-report=html --cov-report=xml --junit-xml=results.xml --cov-report=term-missing --alluredir=allure_report --clean-alluredir"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
