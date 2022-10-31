@@ -116,7 +116,7 @@ class Expression:
 class OPR:
     def __init__(self, key: Any) -> None:
         if not isinstance(key, ExpressionField):
-            raise RuntimeError
+            raise TypeError("必须是有效的字段")
         self.key = key
 
     def eq(self, value: Any) -> Expression:
@@ -172,7 +172,7 @@ class OPR:
         merge_expr: list[Expression] = []
         for expression in expressions:
             if not isinstance(expression, Expression):
-                raise RuntimeError("必须是有效的表达式")
+                raise TypeError("必须是有效的表达式")
 
             if expression.operator is operator:
                 merge_expr.extend(expression.value)

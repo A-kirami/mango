@@ -177,7 +177,7 @@ class Model(BaseModel, metaclass=ModelMeta):
         if all_check(args, Expression | Mapping):
             return FindResult(cls, *args)  # type: ignore
         else:
-            raise RuntimeError("查询表达式类型不正确")
+            raise TypeError("查询表达式类型不正确")
 
     @classmethod
     async def get(cls, _id: Any) -> Self | None:

@@ -73,7 +73,7 @@ class FindResult(Generic[T_Model]):
             elif isinstance(condition, Expression):
                 condition = condition.struct()
             else:
-                raise RuntimeError("查询过滤条件不正确, 应为映射或表达式")
+                raise TypeError("查询过滤条件不正确, 应为映射或表达式")
             compiled |= self._compile(condition)
         return compiled
 
@@ -126,7 +126,7 @@ class FindResult(Generic[T_Model]):
             try:
                 key, direction = str(key), Order(direction)
             except ValueError as e:
-                raise RuntimeError("键应为字符串或字段, 排序方向应为 Order 枚举成员") from e
+                raise TypeError("键应为字符串或字段, 排序方向应为 Order 枚举成员") from e
             else:
                 self.options.sort.append((key, direction))
 
