@@ -61,7 +61,11 @@ def field_validate(model: Type["Model"], input_data: dict[str, Any]) -> dict[str
     if miss := set(input_data) - set(model.__fields__):
         raise ValueError(f"这些字段在 {model.__name__} 中不存在: {miss}")
 
-    fields = {k: v for k, v in model.__fields__.items() if k in input_data}
+    fields = {
+        k: (v.type_, v.field_info)
+        for k, v in model.__fields__.items()
+        if k in input_data
+    }
     new_model = pydantic.create_model(model.__name__, **fields)
     values, _, validation_error = pydantic.validate_model(new_model, input_data)
 
