@@ -31,6 +31,7 @@ class FieldInfo(PDFieldInfo):
         self.primary_key: bool = kwargs.pop("primary_key", False)
         self.index: bool | str | int | Index | None = kwargs.pop("index", None)
         self.expire: int | None = kwargs.pop("expire", None)
+        self.unique: bool = kwargs.pop("unique", None)
         super().__init__(default=default, **kwargs)
 
 
