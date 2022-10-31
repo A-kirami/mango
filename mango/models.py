@@ -62,10 +62,12 @@ class ModelMeta(ModelMetaclass):
         # NameError: Field name "id" shadows a BaseModel attribute; use a different field name with "alias='id'".
         for field_name, field in scls.__fields__.items():
             setattr(scls, field_name, ExpressionField(field, []))
-            if meta.get("primary_key"):
-                continue
-            if isinstance(field.field_info, FieldInfo) and field.field_info.primary_key:
-                meta["primary_key"] = field.field_info.alias or field_name
+            if (
+                not meta.get("primary_key")
+                and isinstance(info := field.field_info, FieldInfo)
+                and info.primary_key
+            ):
+                meta["primary_key"] = info.alias or field_name
 
         if meta:
             scls.meta = MetaData(**meta)
@@ -73,6 +75,10 @@ class ModelMeta(ModelMetaclass):
         return scls
 
     def __get_default_pk(self, bases, attrs: dict[str, Any]) -> str:
+        for name, attr in attrs.items():
+            if isinstance(attr, FieldInfo) and attr.primary_key:
+                return attr.alias or name
+
         for base in bases:
             if getattr(base, "id", None):
                 return ""
