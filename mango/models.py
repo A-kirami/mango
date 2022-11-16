@@ -5,7 +5,7 @@ from bson import ObjectId
 from pydantic import BaseModel
 from pydantic.fields import ModelField
 from pydantic.main import ModelMetaclass
-from pymongo.results import DeleteResult
+from pymongo.results import DeleteResult, UpdateResult
 from typing_extensions import Self, dataclass_transform
 
 from mango.drive import Client, Collection, Database
@@ -143,15 +143,15 @@ class Model(BaseModel, metaclass=ModelMeta):
         await self.meta.collection.insert_one(self.doc())
         return self
 
-    async def update(self, **kwargs) -> Self:
+    async def update(self, **kwargs) -> bool:
         """更新数据"""
         if kwargs:
             values = field_validate(self.__class__, kwargs)
             self = self.copy(update=values)
-        await self.meta.collection.update_one(
+        result: UpdateResult = await self.meta.collection.update_one(
             {"_id": self.pk}, {"$set": self.dict(exclude={self.meta.primary_key})}
         )
-        return self
+        return bool(result.modified_count)
 
     async def delete(self) -> bool:
         """删除数据"""
