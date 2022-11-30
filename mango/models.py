@@ -16,7 +16,7 @@ from mango.result import FindMapping, FindResult
 from mango.utils import all_check, field_validate, to_snake_case
 
 
-class MetaData(BaseModel):
+class MetaConfig(BaseModel):
     database: Database
     collection: Collection
     primary_key: str
@@ -31,7 +31,7 @@ class MetaData(BaseModel):
 class ModelMeta(ModelMetaclass):
     if TYPE_CHECKING:  # pragma: no cover
         __fields__: dict[str, ModelField]
-        meta: MetaData
+        meta: MetaConfig
 
     def __new__(
         cls,
@@ -56,7 +56,13 @@ class ModelMeta(ModelMetaclass):
         scls = super().__new__(cls, cname, bases, attrs)
 
         if raw_meta := attrs.pop("Meta", None) or getattr(scls, "meta", None):
-            meta = raw_meta.dict() | meta
+            if isinstance(raw_meta, MetaConfig):
+                raw_meta = raw_meta.dict()
+            else:
+                raw_meta = {
+                    k: v for k, v in raw_meta.__dict__.items() if not k.startswith("__")
+                }
+            meta = raw_meta | meta
 
         # 由于此处代码使用了 setattr，导致子类重写父类的字段时会引发错误，暂无解决办法
         # NameError: Field name "id" shadows a BaseModel attribute; use a different field name with "alias='id'".
@@ -70,7 +76,7 @@ class ModelMeta(ModelMetaclass):
                 meta["primary_key"] = info.alias or field_name
 
         if meta:
-            scls.meta = MetaData(**meta)
+            scls.meta = MetaConfig(**meta)
 
         return scls
 
@@ -120,7 +126,7 @@ class ModelMeta(ModelMetaclass):
 
 class Model(BaseModel, metaclass=ModelMeta):
     id: ClassVar[ObjectId]
-    meta: ClassVar[MetaData]
+    meta: ClassVar[MetaConfig]
 
     if TYPE_CHECKING:  # pragma: no cover
 
