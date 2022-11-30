@@ -77,6 +77,7 @@ class ModelMeta(ModelMetaclass):
     def __get_default_pk(self, bases, attrs: dict[str, Any]) -> str:
         for name, attr in attrs.items():
             if isinstance(attr, FieldInfo) and attr.primary_key:
+                attrs[name].allow_mutation = False
                 return attr.alias or name
 
         for base in bases:
@@ -86,7 +87,7 @@ class ModelMeta(ModelMetaclass):
         if "id" in attrs["__annotations__"]:
             return ""
 
-        attrs["id"] = Field(default_factory=ObjectId, init=False)
+        attrs["id"] = Field(default_factory=ObjectId, allow_mutation=False, init=False)
         attrs["__annotations__"]["id"] = ObjectIdField
         return "id"
 
