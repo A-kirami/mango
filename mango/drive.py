@@ -121,6 +121,6 @@ def connect(
     db: str | None = None, /, uri: str = "mongodb://localhost:27017", **kwargs
 ) -> Client:
     client = Client(uri, **kwargs)
-    db_name: AsyncIOMotorDatabase = client.client.get_default_database("test").name
-    getattr(client, db or db_name)
+    db_name = db or client.client.get_default_database("test").name
+    getattr(client, db_name)
     return client
