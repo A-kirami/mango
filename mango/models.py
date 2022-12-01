@@ -8,7 +8,7 @@ from pydantic.main import ModelMetaclass
 from pymongo.results import DeleteResult, UpdateResult
 from typing_extensions import Self, dataclass_transform
 
-from mango.drive import Client, Collection, Database
+from mango.drive import Client, Collection, Database, connect
 from mango.expression import Expression, ExpressionField
 from mango.fields import Field, FieldInfo, ObjectIdField
 from mango.index import Index, IndexType
@@ -100,8 +100,8 @@ class ModelMeta(ModelMetaclass):
     def __get_database(self, db: Database | str | None = None) -> Database:
         try:
             client = Client._client[0]
-        except IndexError as e:
-            raise RuntimeError("无客户端连接") from e
+        except IndexError:
+            client = connect()
 
         if isinstance(db, Database):
             return db
