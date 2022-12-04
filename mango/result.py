@@ -1,7 +1,7 @@
 from collections.abc import AsyncGenerator, Generator, Mapping
 from typing import TYPE_CHECKING, Any, Generic, Type, TypeAlias, TypeVar
 
-from motor.motor_asyncio import AsyncIOMotorCursor
+from motor.motor_asyncio import AsyncIOMotorCursor, AsyncIOMotorLatentCommandCursor
 from pydantic import BaseModel
 from pymongo.results import DeleteResult
 
@@ -56,7 +56,7 @@ class FindResult(Generic[T_Model]):
 
     async def __aiter__(self) -> AsyncGenerator[T_Model, None]:
         """`async for`: 异步迭代查询结果"""
-        async for document in self.cursor:
+        async for document in self.cursor:  # type: ignore
             yield self.model.from_doc(document)
 
     @property
@@ -182,3 +182,19 @@ class FindResult(Generic[T_Model]):
         """使用提供的信息更新查找到的文档"""
         values = field_validate(self.model, kwargs)
         await self.collection.update_many(self.filter, {"$set": values})
+
+
+class AggregateResult:
+    def __init__(self, cursor: AsyncIOMotorLatentCommandCursor) -> None:
+        self.cursor = cursor
+
+    def __await__(self) -> Generator[None, None, list[dict[str, Any]]]:
+        """
+        `await` : 等待时，将返回聚合管道的结果文档列表
+        """
+        return (yield from self.cursor.to_list(length=None).__await__())
+
+    async def __aiter__(self) -> AsyncGenerator[dict[str, Any], None]:
+        """`async for`: 异步迭代聚合管道的结果文档"""
+        async for document in self.cursor:  # type: ignore
+            yield document

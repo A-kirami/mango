@@ -12,7 +12,8 @@ from mango.drive import Client, Collection, Database, connect
 from mango.expression import Expression, ExpressionField
 from mango.fields import Field, FieldInfo, ObjectIdField
 from mango.index import Index, IndexType
-from mango.result import FindMapping, FindResult
+from mango.result import AggregateResult, FindMapping, FindResult
+from mango.stage import Pipeline
 from mango.utils import all_check, field_validate, to_snake_case
 
 
@@ -165,10 +166,6 @@ class Model(BaseModel, metaclass=ModelMeta):
         result: DeleteResult = await self.meta.collection.delete_one({"_id": self.pk})
         return bool(result.deleted_count)
 
-    async def aggregate(self, pipeline: Sequence[Mapping[str, Any]]):
-        """聚合查询"""
-        ...
-
     def doc(self) -> dict[str, Any]:
         """转换为 MongoDB 文档"""
         data = self.dict()
@@ -180,6 +177,14 @@ class Model(BaseModel, metaclass=ModelMeta):
         """从文档构建模型实例"""
         document[cls.meta.primary_key] = document.pop("_id")
         return cls(**document)
+
+    @classmethod
+    def aggregate(
+        cls, pipeline: Pipeline | Sequence[Mapping[str, Any]], *args, **kwargs
+    ) -> AggregateResult:
+        """聚合查询"""
+        cursor = cls.meta.collection.aggregate(pipeline, *args, **kwargs)
+        return AggregateResult(cursor)
 
     @classmethod
     def find(
