@@ -14,7 +14,7 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.10"
 motor = "^3.0.0"
-pydantic = "^1.9.0"
+pydantic = "^1.10.0"
 
 [tool.poetry.group.dev]
 optional = true
