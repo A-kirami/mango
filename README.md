@@ -130,6 +130,8 @@ class Fruit(Model, name="goods"):
     price: int = Field(gt=0)
 ```
 
+<p align="right">[<a href="#readme-top">⬆回到顶部</a>]</p>
+
 ### 将数据保存到数据库
 
 接下来让我们使用它来将水果的数据保存到数据库。
@@ -138,6 +140,9 @@ class Fruit(Model, name="goods"):
 # 创建一个实例并保存它
 fruit = await Fruit(name="mango", price=100).save()
 ```
+
+<p align="right">[<a href="#readme-top">⬆回到顶部</a>]</p>
+
 ### 查找符合条件的文档
 
 现在我们可以从数据库中获取一些数据。
@@ -163,6 +168,9 @@ async for fruit in Fruit.find(Fruit.name == "mango"):
 fruits = await Fruit.find({"name": "mango"})
 fruits = await Fruit.find({Fruit.name: "mango"})
 ```
+
+<p align="right">[<a href="#readme-top">⬆回到顶部</a>]</p>
+
 ### 修改数据库中的文档
 
 ```python
@@ -176,6 +184,9 @@ await fruit.update()
 # 我们也可以使用另一种方式
 await fruit.update(price=300)
 ```
+
+<p align="right">[<a href="#readme-top">⬆回到顶部</a>]</p>
+
 ### 嵌入式模型
 
 Mango 也可以存储和查询内嵌文档。
@@ -202,6 +213,8 @@ fruit = await Fruit(name="mango", price=100, address=address).save()
 await Fruit.find(fruit.address.city == "any")
 ```
 
+<p align="right">[<a href="#readme-top">⬆回到顶部</a>]</p>
+
 ### 连接数据库
 
 实际上，如果没有显式连接数据库，那么 Mango 将默认连接到 `mongodb://localhost:27017` 的 `test` 数据库，就像我们一开始做的那样。
@@ -220,6 +233,8 @@ connect(uri="mongodb://localhost:12345")
 # 连接到 mongodb://localhost:12345 的 mango 数据库
 connect("mango", uri="mongodb://localhost:12345")
 ```
+
+<p align="right">[<a href="#readme-top">⬆回到顶部</a>]</p>
 
 ## 🤝 贡献
 
