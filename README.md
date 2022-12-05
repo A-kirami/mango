@@ -34,7 +34,7 @@
 </p>
 <p align="center">
 
-## 目录
+## 🔖 目录
 
 <details open="open">
   <summary>目录</summary>
@@ -122,7 +122,7 @@ class Fruit(Model):
 
 每个 Mango 模型也是一个 Pydantic 模型，所以您也可以使用各种 Pydantic 验证器进行复杂的验证！
 
-`Fruit` 模型在数据库中的集合名称是 `fruit`，我们也可以给他起一个不同的名字。
+`Fruit` 模型在数据库中的集合名称是 `fruit`，我们也可以给它起一个不同的名字。
 
 ```python
 class Fruit(Model, name="goods"):
@@ -206,7 +206,7 @@ await Fruit.find(fruit.address.city == "any")
 
 实际上，如果没有显式连接数据库，那么 Mango 将默认连接到 `mongodb://localhost:27017` 的 `test` 数据库，就像我们一开始做的那样。
 
-我们也可以显式指定连接的 MongoDB，就像下面这样：
+我们也可以显式指定连接的 MongoDB：
 
 ```python
 from mango import connect
