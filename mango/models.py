@@ -26,6 +26,7 @@ class MetaConfig(BaseModel):
     primary_key: str
     indexes: Sequence[Index]
     encode_type: EncodeType = Field(default_factory=dict)
+    by_alias: bool = False
 
     class Config:
         arbitrary_types_allowed = True
@@ -175,6 +176,8 @@ class Model(BaseModel, metaclass=ModelMeta):
 
     def doc(self, **kwargs) -> dict[str, Any]:
         """转换为 MongoDB 文档"""
+        if self.meta.by_alias:
+            kwargs["by_alias"] = True
         data = self.dict(**kwargs)
         pk = self.meta.primary_key
         exclude = kwargs.get("exclude")
