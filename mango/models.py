@@ -25,7 +25,7 @@ class MetaConfig(BaseModel):
     collection: Collection
     primary_key: str
     indexes: Sequence[Index]
-    encode_type: EncodeType
+    encode_type: EncodeType = Field(default_factory=dict)
 
     class Config:
         arbitrary_types_allowed = True
