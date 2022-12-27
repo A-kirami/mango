@@ -177,7 +177,8 @@ class Model(BaseModel, metaclass=ModelMeta):
         """转换为 MongoDB 文档"""
         data = self.dict(**kwargs)
         pk = self.meta.primary_key
-        if (exclude := kwargs.get("exclude")) and pk not in exclude:
+        exclude = kwargs.get("exclude")
+        if not (exclude and pk in exclude):
             data["_id"] = data.pop(pk)
         return bson.decode(bson.encode(data, codec_options=self.__encoder__))
 
