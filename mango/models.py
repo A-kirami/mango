@@ -179,7 +179,7 @@ class Model(BaseModel, metaclass=ModelMeta):
         pk = self.meta.primary_key
         if (exclude := kwargs.get("exclude")) and pk not in exclude:
             data["_id"] = data.pop(pk)
-        return bson.decode(bson.encode(data), codec_options=self.__encoder__)
+        return bson.decode(bson.encode(data, codec_options=self.__encoder__))
 
     @classmethod
     def from_doc(cls, document: dict[str, Any]) -> Self:
