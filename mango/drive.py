@@ -48,7 +48,11 @@ class Database:
         return iter(self.collections.values())
 
     def __repr__(self) -> str:
-        return f"Database(name={self.name}, host={self.client.HOST}, port={self.client.PORT})"
+        return (
+            f"Database(name={self.name}, "
+            "host={self.client.HOST}, "
+            "port={self.client.PORT})"
+        )
 
     async def drop_collection(self, collection: str | Collection):
         """删除集合"""

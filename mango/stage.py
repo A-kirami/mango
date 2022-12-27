@@ -36,7 +36,7 @@ class Pipeline(list[Mapping[str, Any]]):
         output: 指定输出文档中除 `_id` 字段外还要包含的字段。如果未指定文档，则操作返回包含文档数的字段在每个存储桶中。
 
         [$bucket (aggregation)](https://www.mongodb.com/docs/manual/reference/operator/aggregation/bucket/)
-        """
+        """  # noqa: E501
         if len(boundaries) < 2:
             raise ValueError("必须至少指定两个边界值")
         if sorted(boundaries) != boundaries:
@@ -58,7 +58,7 @@ class Pipeline(list[Mapping[str, Any]]):
         field : 输出字段的名称，其值为计数结果。必须是非空字符串，不能以 `$` 开头，也不能包含 `.` 字符。
 
         [$count (aggregation)](https://www.mongodb.com/docs/manual/reference/operator/aggregation/count/)
-        """
+        """  # noqa: E501
         if not field or field.startswith("$") or "." in field:
             raise ValueError("必须是非空字符串, 不能以 `$` 开头，也不能包含 `.` 字符。")
         return self.stage("count", field)
@@ -70,7 +70,7 @@ class Pipeline(list[Mapping[str, Any]]):
         expression: 接受任何解析为映射数组的有效表达式。
 
         [$documents (aggregation)](https://www.mongodb.com/docs/manual/reference/operator/aggregation/documents/)
-        """
+        """  # noqa: E501
         return self.stage("documents", expression)
 
     def facet(self, **field: Self | Sequence[Mapping[str, Any]]) -> Self:
@@ -81,7 +81,7 @@ class Pipeline(list[Mapping[str, Any]]):
         field: 参数名为子管道输出的字段名, 参数为需要运行的子管道。
 
         [$facet (aggregation)](https://www.mongodb.com/docs/manual/reference/operator/aggregation/facet/)
-        """
+        """  # noqa: E501
         return self.stage("facet", field)
 
     def fill(
@@ -100,7 +100,7 @@ class Pipeline(list[Mapping[str, Any]]):
         sort_by: 指定用于对每个分区内的文档进行排序的字段。
 
         [$fill (aggregation)](https://www.mongodb.com/docs/manual/reference/operator/aggregation/fill/)
-        """
+        """  # noqa: E501
         struct: dict[str, Any] = {
             "output": output,
         }
@@ -125,7 +125,7 @@ class Pipeline(list[Mapping[str, Any]]):
         field: 参数名为额外添加的字段, 参数为累加器表达式。
 
         [$group (aggregation)](https://www.mongodb.com/docs/manual/reference/operator/aggregation/group/)
-        """
+        """  # noqa: E501
         return self.stage("group", {"_id": id, **field})
 
     def limit(self, integer: int) -> Self:
@@ -135,7 +135,7 @@ class Pipeline(list[Mapping[str, Any]]):
         integer: 指定要传递的文档的最大数量。
 
         [$limit (aggregation)](https://www.mongodb.com/docs/manual/reference/operator/aggregation/limit/)
-        """
+        """  # noqa: E501
         return self.stage("limit", integer)
 
     def lookup(
@@ -159,7 +159,7 @@ class Pipeline(list[Mapping[str, Any]]):
         as_: 指定要添加到输出文档的新数组字段的名称。新的数组字段包含来自 `from_` 集合的匹配文档。如果指定的名称已经存在于输出文档中，则覆盖现有字段。
 
         [$lookup (aggregation)](https://www.mongodb.com/docs/manual/reference/operator/aggregation/lookup/)
-        """
+        """  # noqa: E501
         return self.stage(
             "lookup",
             {
@@ -183,7 +183,7 @@ class Pipeline(list[Mapping[str, Any]]):
         query: 指定查询条件。
 
         [$match (aggregation)](https://www.mongodb.com/docs/manual/reference/operator/aggregation/match/)
-        """
+        """  # noqa: E501
         return self.stage("match", query)
 
     def merge(
@@ -208,7 +208,7 @@ class Pipeline(list[Mapping[str, Any]]):
         not_matched: 如果结果文档与输出集合中的现有文档不匹配，则 `$merge` 的行为。
 
         [$merge (aggregation)](https://www.mongodb.com/docs/manual/reference/operator/aggregation/merge/)
-        """
+        """  # noqa: E501
         struct = {
             "into": {"db": database, "coll": collection} if database else collection,
             "whenMatched": matched,
@@ -228,7 +228,7 @@ class Pipeline(list[Mapping[str, Any]]):
         collection: 输出集合名称。
 
         [$out (aggregation)](https://www.mongodb.com/docs/manual/reference/operator/aggregation/out/)
-        """
+        """  # noqa: E501
         return self.stage(
             "out", {"db": database, "coll": collection} if database else collection
         )
@@ -240,7 +240,7 @@ class Pipeline(list[Mapping[str, Any]]):
         field: 参数名为指定传递的字段。参数如果为布尔值，则可以包含或排除字段；如果为表达式，则可以添加新字段或重置现有字段的值。
 
         [$project (aggregation)](https://www.mongodb.com/docs/manual/reference/operator/aggregation/project/)
-        """
+        """  # noqa: E501
         return self.stage("project", field)
 
     def redact(self, expression: Any) -> Self:
@@ -250,7 +250,7 @@ class Pipeline(list[Mapping[str, Any]]):
         expression: 可以是任何有效的表达式，只要它解析为 `$$DESCEND`、`$$PRUNE` 或 `$$KEEP` 系统变量。
 
         [$redact (aggregation)](https://www.mongodb.com/docs/manual/reference/operator/aggregation/redact/)
-        """
+        """  # noqa: E501
         return self.stage("redact", expression)
 
     def replace(self, replacement: Any) -> Self:
@@ -260,7 +260,7 @@ class Pipeline(list[Mapping[str, Any]]):
         replacement: 可以是解析为文档的任何有效表达式。
 
         [$replaceWith (aggregation)](https://www.mongodb.com/docs/manual/reference/operator/aggregation/replaceWith/)
-        """
+        """  # noqa: E501
         return self.stage("replaceWith", replacement)
 
     def sample(self, size: int) -> Self:
@@ -270,7 +270,7 @@ class Pipeline(list[Mapping[str, Any]]):
         size: 随机选择的文档数量。
 
         [$sample (aggregation)](https://www.mongodb.com/docs/manual/reference/operator/aggregation/sample/)
-        """
+        """  # noqa: E501
         return self.stage("sample", {"size": size})
 
     def set(self, **field: Any) -> Self:
@@ -280,7 +280,7 @@ class Pipeline(list[Mapping[str, Any]]):
         field: 参数名为需要添加的每个字段的名称，参数为聚合表达式。如果新字段的名称与现有字段名称(包括 `_id`)相同，`$set` 将使用指定表达式的值覆盖该字段的现有值。
 
         [$set (aggregation)](https://www.mongodb.com/docs/manual/reference/operator/aggregation/set/)
-        """
+        """  # noqa: E501
         return self.stage("set", field)
 
     def skip(self, integer: int) -> Self:
@@ -290,7 +290,7 @@ class Pipeline(list[Mapping[str, Any]]):
         integer: 指定要跳过的文档的最大数量。
 
         [$skip (aggregation)](https://www.mongodb.com/docs/manual/reference/operator/aggregation/skip/)
-        """
+        """  # noqa: E501
         return self.stage("skip", integer)
 
     def sort(self, **field: SortOrder) -> Self:
@@ -300,7 +300,7 @@ class Pipeline(list[Mapping[str, Any]]):
         field: 参数名为指定要排序的字段，参数为字段的排序顺序。最多可以按32个字段进行排序。
 
         [$sort (aggregation)](https://www.mongodb.com/docs/manual/reference/operator/aggregation/sort/)
-        """
+        """  # noqa: E501
         return self.stage("sort", field)
 
     def union(
@@ -316,7 +316,7 @@ class Pipeline(list[Mapping[str, Any]]):
         pipeline: 应用于指定的集合的聚合管道。
 
         [$unionWith (aggregation)](https://www.mongodb.com/docs/manual/reference/operator/aggregation/unionWith/)
-        """
+        """  # noqa: E501
         return self.stage(
             "unionWith",
             {"coll": collection, "pipeline": pipeline} if pipeline else collection,
@@ -329,7 +329,7 @@ class Pipeline(list[Mapping[str, Any]]):
         field: 指定要删除的字段。
 
         [$unset (aggregation)](https://www.mongodb.com/docs/manual/reference/operator/aggregation/unset/)
-        """
+        """  # noqa: E501
         return self.stage("unset", field)
 
     def unwind(
@@ -343,7 +343,7 @@ class Pipeline(list[Mapping[str, Any]]):
         preserve_empty: 在文档中的指定字段路径为 null、不存在或为空数组的情况下，如果该值为 `True`，则 `$unwind` 将输出文档，否则不会输出文档。
 
         [$unwind (aggregation)](https://www.mongodb.com/docs/manual/reference/operator/aggregation/unwind/#mongodb-pipeline-pipe.-unwind)
-        """
+        """  # noqa: E501
         struct = {
             "path": path,
             "preserveNullAndEmptyArrays": preserve_empty,

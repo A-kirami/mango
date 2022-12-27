@@ -71,7 +71,8 @@ class ModelMeta(ModelMetaclass):
             meta = raw_meta | meta
 
         # 由于此处代码使用了 setattr，导致子类重写父类的字段时会引发错误，暂无解决办法
-        # NameError: Field name "id" shadows a BaseModel attribute; use a different field name with "alias='id'".
+        # NameError: Field name "id" shadows a BaseModel attribute;
+        # use a different field name with "alias='id'".
         for field_name, field in scls.__fields__.items():
             setattr(scls, field_name, ExpressionField(field, []))
             if (
@@ -89,18 +90,22 @@ class ModelMeta(ModelMetaclass):
         return scls
 
     def __get_default_pk(self, bases, attrs: dict[str, Any]) -> str:
+        # 显式定义主键
         for name, attr in attrs.items():
             if isinstance(attr, FieldInfo) and attr.primary_key:
                 attrs[name].allow_mutation = False
                 return attr.alias or name
 
+        # 存在 id 字段但未定义主键
+        if "id" in attrs["__annotations__"]:
+            return ""
+
+        # 存在 id 字段但未定义主键，且其被继承
         for base in bases:
             if getattr(base, "id", None):
                 return ""
 
-        if "id" in attrs["__annotations__"]:
-            return ""
-
+        # 未显式定义主键，则默认使用 id 字段作为主键
         attrs["id"] = Field(default_factory=ObjectId, allow_mutation=False, init=False)
         attrs["__annotations__"]["id"] = ObjectIdField
         return "id"
