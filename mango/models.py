@@ -1,7 +1,9 @@
 from collections.abc import Generator, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, ClassVar
 
+import bson
 from bson import ObjectId
+from bson.codec_options import CodecOptions
 from pydantic import BaseModel
 from pydantic.fields import ModelField
 from pydantic.main import ModelMetaclass
@@ -9,6 +11,7 @@ from pymongo.results import DeleteResult, UpdateResult
 from typing_extensions import Self, dataclass_transform
 
 from mango.drive import Client, Collection, Database, connect
+from mango.encoder import Encoder, EncodeType
 from mango.expression import Expression, ExpressionField
 from mango.fields import Field, FieldInfo, ObjectIdField
 from mango.index import Index, IndexType
@@ -22,6 +25,7 @@ class MetaConfig(BaseModel):
     collection: Collection
     primary_key: str
     indexes: Sequence[Index]
+    encode_type: EncodeType
 
     class Config:
         arbitrary_types_allowed = True
@@ -76,6 +80,8 @@ class ModelMeta(ModelMetaclass):
             ):
                 meta["primary_key"] = info.alias or field_name
 
+        scls.__encoder__ = Encoder.create(meta.get("encode_type"))
+
         if meta:
             scls.meta = MetaConfig(**meta)
 
@@ -128,6 +134,7 @@ class ModelMeta(ModelMetaclass):
 class Model(BaseModel, metaclass=ModelMeta):
     id: ClassVar[ObjectId]
     meta: ClassVar[MetaConfig]
+    __encoder__: ClassVar[CodecOptions]
 
     if TYPE_CHECKING:  # pragma: no cover
 
@@ -171,7 +178,7 @@ class Model(BaseModel, metaclass=ModelMeta):
         data = self.dict(**kwargs)
         if self.meta.primary_key not in kwargs["exclude"]:
             data["_id"] = data.pop(self.meta.primary_key)
-        return data
+        return bson.decode(bson.encode(data), codec_options=self.__encoder__)
 
     @classmethod
     def from_doc(cls, document: dict[str, Any]) -> Self:
