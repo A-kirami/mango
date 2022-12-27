@@ -157,7 +157,7 @@ class Model(BaseModel, metaclass=ModelMeta):
             values = field_validate(self.__class__, kwargs)
             self = self.copy(update=values)
         result: UpdateResult = await self.meta.collection.update_one(
-            {"_id": self.pk}, {"$set": self.dict(exclude={self.meta.primary_key})}
+            {"_id": self.pk}, {"$set": self.doc(exclude={self.meta.primary_key})}
         )
         return bool(result.modified_count)
 
@@ -166,10 +166,11 @@ class Model(BaseModel, metaclass=ModelMeta):
         result: DeleteResult = await self.meta.collection.delete_one({"_id": self.pk})
         return bool(result.deleted_count)
 
-    def doc(self) -> dict[str, Any]:
+    def doc(self, **kwargs) -> dict[str, Any]:
         """转换为 MongoDB 文档"""
-        data = self.dict()
-        data["_id"] = data.pop(self.meta.primary_key)
+        data = self.dict(**kwargs)
+        if self.meta.primary_key not in kwargs["exclude"]:
+            data["_id"] = data.pop(self.meta.primary_key)
         return data
 
     @classmethod
