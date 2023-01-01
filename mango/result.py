@@ -1,5 +1,5 @@
 from collections.abc import AsyncGenerator, Generator, Mapping
-from typing import TYPE_CHECKING, Any, Generic, Type, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeAlias, TypeVar
 
 from motor.motor_asyncio import AsyncIOMotorCursor, AsyncIOMotorLatentCommandCursor
 from pydantic import BaseModel
@@ -7,12 +7,12 @@ from pymongo.results import DeleteResult
 
 from mango.expression import Expression, ExpressionField
 from mango.index import Order
-from mango.utils import any_check, field_validate, is_sequence
+from mango.utils import any_check, is_sequence, validate_fields
 
 if TYPE_CHECKING:  # pragma: no cover
-    from mango.models import Model
+    from mango.models import Document
 
-T_Model = TypeVar("T_Model", bound="Model")
+T_Model = TypeVar("T_Model", bound="Document")
 
 KeyField: TypeAlias = str | ExpressionField
 
@@ -35,18 +35,16 @@ class FindOptions(BaseModel):
 class FindResult(Generic[T_Model]):
     def __init__(
         self,
-        model: Type[T_Model],
+        model: type[T_Model],
         *filter: FindMapping | Expression,
     ) -> None:
         self.model = model
-        self.collection = model.meta.collection
+        self.collection = model.__collection__
         self._filter = filter
         self.options = FindOptions()
 
     def __await__(self) -> Generator[None, None, list[T_Model]]:
-        """
-        `await` : 等待时，将返回获取的模型列表
-        """
+        """`await` : 等待时，将返回获取的模型列表"""
         documents = yield from self.cursor.to_list(length=None).__await__()
         instances: list[T_Model] = []
         for document in documents:
@@ -163,16 +161,6 @@ class FindResult(Generic[T_Model]):
         if document := await self.collection.find_one(self.filter):
             return self.model.from_doc(document)
 
-    async def get_or_create(
-        self, defaults: dict[str, Any] | T_Model | None = None
-    ) -> T_Model:
-        """获取文档, 如果不存在, 则创建"""
-        if model := await self.get():
-            return model
-        if isinstance(defaults, dict | None):
-            defaults = self.model(**(defaults or {}))
-        return await defaults.save()
-
     async def delete(self) -> int:
         """删除符合条件的文档"""
         result: DeleteResult = await self.collection.delete_many(self.filter)
@@ -180,7 +168,7 @@ class FindResult(Generic[T_Model]):
 
     async def update(self, **kwargs: Any) -> None:
         """使用提供的信息更新查找到的文档"""
-        values = field_validate(self.model, kwargs)
+        values = validate_fields(self.model, kwargs)
         await self.collection.update_many(self.filter, {"$set": values})
 
 

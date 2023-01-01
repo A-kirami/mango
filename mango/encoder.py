@@ -4,7 +4,7 @@ from typing import Any, ClassVar, TypeAlias
 
 from bson.codec_options import CodecOptions, TypeRegistry
 
-EncodeType: TypeAlias = dict[type | tuple[type, ...], Callable[[Any], Any]]
+EncodeType: TypeAlias = dict[type[Any] | tuple[type[Any], ...], Callable[..., Any]]
 
 
 class Encoder:

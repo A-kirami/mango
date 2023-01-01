@@ -6,7 +6,7 @@ from pydantic.fields import ModelField
 from typing_extensions import Self
 
 if TYPE_CHECKING:  # pragma: no cover
-    from mango.models import Model
+    from mango.models import Document
 
 
 class Operators(Enum):
@@ -40,7 +40,9 @@ class Operators(Enum):
 
 
 class ExpressionField:
-    def __init__(self, field: ModelField, parents: list[tuple[str, "Model"]]) -> None:
+    def __init__(
+        self, field: ModelField, parents: list[tuple[str, "Document"]]
+    ) -> None:
         self.field = field
         self.parents = parents
 

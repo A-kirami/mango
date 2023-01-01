@@ -1,4 +1,6 @@
-from collections.abc import Generator, Mapping, Sequence
+import contextlib
+from collections.abc import Mapping, MutableMapping, Sequence
+from functools import reduce
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import bson
@@ -10,181 +12,185 @@ from pydantic.main import ModelMetaclass
 from pymongo.results import DeleteResult, UpdateResult
 from typing_extensions import Self, dataclass_transform
 
-from mango.drive import Client, Collection, Database, connect
-from mango.encoder import Encoder, EncodeType
-from mango.expression import Expression, ExpressionField
+from mango.drive import Collection, Database
+from mango.encoder import Encoder
+from mango.expression import Expression, ExpressionField, Operators
 from mango.fields import Field, FieldInfo, ObjectIdField
-from mango.index import Index, IndexType
+from mango.meta import MetaConfig, inherit_meta
 from mango.result import AggregateResult, FindMapping, FindResult
+from mango.source import Mango
 from mango.stage import Pipeline
-from mango.utils import all_check, field_validate, to_snake_case
+from mango.utils import add_fields, all_check, validate_fields
+
+operators = tuple(str(i) for i in Operators)
 
 
-class MetaConfig(BaseModel):
-    database: Database
-    collection: Collection
-    primary_key: str
-    indexes: Sequence[Index]
-    encode_type: EncodeType = Field(default_factory=dict)
-    by_alias: bool = False
+def is_need_default_pk(
+    bases: tuple[type[Any], ...], annotate: dict[str, Any] | None = None
+) -> bool:
+    # 未定义任何字段
+    if not annotate:
+        return False
 
-    class Config:
-        arbitrary_types_allowed = True
-        frozen = True
+    # 存在 id 字段但未定义主键
+    if "id" in annotate:
+        return False
+
+    # 存在 id 字段但未定义主键，且其被继承
+    return not any(getattr(base, "id", None) for base in bases)
+
+
+def set_default_pk(model: type["Document"]) -> None:
+    value = Field(default_factory=ObjectId, allow_mutation=False, init=False)
+    add_fields(model, id=(ObjectIdField, value))
+    model.__primary_key__ = "id"
+
+
+def flat_filter(data: Mapping[str, Any]) -> dict[str, Any]:
+    flatted = {}
+    for key, value in data.items():
+        if key.startswith(operators):
+            flatted |= flat_filter(reduce(lambda x, y: x | y, value))
+        elif "." in key:
+            parent, child = key.split(".", maxsplit=1)
+            flatted[parent] = flat_filter({child: value})
+        else:
+            for operator in operators:
+                if ov := value.get(operator):
+                    flatted[key] = ov
+    return flatted
+
+
+def merge_map(data: MutableMapping[Any, Any], into: Mapping[Any, Any]) -> None:
+    for k, v in into.items():
+        k = str(k)
+        if isinstance(data.get(k), dict) and isinstance(v, dict | EmbeddedDocument):
+            merge_map(data[k], v if isinstance(v, dict) else v.dict())
+        else:
+            data[k] = v
 
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
-class ModelMeta(ModelMetaclass):
-    if TYPE_CHECKING:  # pragma: no cover
-        __fields__: dict[str, ModelField]
-        meta: MetaConfig
-
+class MetaDocument(ModelMetaclass):
     def __new__(
         cls,
         cname: str,
-        bases: tuple[type, ...],
+        bases: tuple[type[Any], ...],
         attrs: dict[str, Any],
-        *,
-        name: str | None = None,
-        db: Database | str | None = None,
-        embedded: bool = False,
-        indexes: Sequence[Index] | None = None,
+        **kwargs: Any,
     ):
-        meta: dict[str, Any] = {}
+        meta = MetaConfig
 
-        base, *_ = bases
-        if not (embedded or base is BaseModel):
-            meta["database"] = cls.__get_database(cls, db)
-            meta["collection"] = meta["database"][name or to_snake_case(cname)]
-            meta["primary_key"] = cls.__get_default_pk(cls, bases, attrs)
-            meta["indexes"] = [*(indexes or []), *(cls.__get_indexes(cls, attrs))]
+        for base in reversed(bases):
+            if base != BaseModel and issubclass(base, Document):
+                meta = inherit_meta(base.__meta__, MetaConfig)
 
-        scls = super().__new__(cls, cname, bases, attrs)
+        kwargs.setdefault("database", kwargs.pop("db", None))
 
-        if raw_meta := attrs.pop("Meta", None) or getattr(scls, "meta", None):
-            if isinstance(raw_meta, MetaConfig):
-                raw_meta = raw_meta.dict()
-            else:
-                raw_meta = {
-                    k: v for k, v in raw_meta.__dict__.items() if not k.startswith("__")
-                }
-            meta = raw_meta | meta
+        allowed_meta_kwargs = {
+            key
+            for key in dir(meta)
+            if not (key.startswith("__") and key.endswith("__"))
+        }
+        meta_kwargs = {
+            key: kwargs.pop(key) for key in kwargs.keys() & allowed_meta_kwargs
+        }
+
+        attrs["__meta__"] = inherit_meta(attrs.get("Meta"), meta, **meta_kwargs)
+        attrs["__encoder__"] = Encoder.create(attrs["__meta__"].bson_encoders)
+
+        scls = super().__new__(cls, cname, bases, attrs, **kwargs)
 
         # 由于此处代码使用了 setattr，导致子类重写父类的字段时会引发错误，暂无解决办法
-        # NameError: Field name "id" shadows a BaseModel attribute;
-        # use a different field name with "alias='id'".
-        for field_name, field in scls.__fields__.items():
-            setattr(scls, field_name, ExpressionField(field, []))
-            if (
-                not meta.get("primary_key")
-                and isinstance(info := field.field_info, FieldInfo)
-                and info.primary_key
-            ):
-                meta["primary_key"] = info.alias or field_name
+        # NameError: Field name "xxx" shadows a BaseModel attribute;
+        # use a different field name with "alias='xxx'".
+        for fname, field in scls.__fields__.items():
+            setattr(scls, fname, ExpressionField(field, []))
+            if isinstance(finfo := field.field_info, FieldInfo) and finfo.primary_key:
+                pk = finfo.alias or fname
+                if getattr(scls, "__primary_key__", pk) != pk:
+                    raise ValueError("文档的主键应唯一")
+                finfo.allow_mutation = False
+                scls.__primary_key__ = pk
 
-        scls.__encoder__ = Encoder.create(meta.get("encode_type"))
+        if not hasattr(scls, "__primary_key__") and is_need_default_pk(
+            bases, attrs.get("__annotations__")
+        ):
+            set_default_pk(scls)
 
-        if meta:
-            scls.meta = MetaConfig(**meta)
+        Mango.register_model(scls)
 
         return scls
 
-    def __get_default_pk(self, bases, attrs: dict[str, Any]) -> str:
-        # 显式定义主键
-        for name, attr in attrs.items():
-            if isinstance(attr, FieldInfo) and attr.primary_key:
-                attrs[name].allow_mutation = False
-                return attr.alias or name
 
-        # 存在 id 字段但未定义主键
-        if "id" in attrs["__annotations__"]:
-            return ""
-
-        # 存在 id 字段但未定义主键，且其被继承
-        for base in bases:
-            if getattr(base, "id", None):
-                return ""
-
-        # 未显式定义主键，则默认使用 id 字段作为主键
-        attrs["id"] = Field(default_factory=ObjectId, allow_mutation=False, init=False)
-        attrs["__annotations__"]["id"] = ObjectIdField
-        return "id"
-
-    def __get_database(self, db: Database | str | None = None) -> Database:
-        try:
-            client = Client._client[0]
-        except IndexError:
-            client = connect()
-
-        if isinstance(db, Database):
-            return db
-        elif isinstance(db, str):
-            return client[db]
-        else:
-            return client.default_database
-
-    def __get_indexes(self, attrs: dict[str, Any]) -> Generator[Index, None, None]:
-        for name, attr in attrs.items():
-            if isinstance(attr, FieldInfo):
-                if index := attr.index:
-                    if index is True:
-                        yield Index(name)
-                    elif isinstance(index, IndexType):
-                        yield Index((name, index))
-                    elif isinstance(index, Index):
-                        yield index
-                elif expire := attr.expire:
-                    yield Index(name, expireAfterSeconds=expire)
+@dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
+class MetaEmbeddedDocument(ModelMetaclass):
+    def __new__(
+        cls,
+        name: str,
+        bases: tuple[type[Any], ...],
+        attrs: dict[str, Any],
+        **kwargs: Any,
+    ):
+        scls = super().__new__(cls, name, bases, attrs, **kwargs)
+        for fname, field in scls.__fields__.items():
+            setattr(scls, fname, ExpressionField(field, []))
+            if isinstance(finfo := field.field_info, FieldInfo) and finfo.primary_key:
+                raise ValueError("内嵌文档不可设置主键")
+        return scls
 
 
-class Model(BaseModel, metaclass=ModelMeta):
-    id: ClassVar[ObjectId]
-    meta: ClassVar[MetaConfig]
-    __encoder__: ClassVar[CodecOptions]
+class Document(BaseModel, metaclass=MetaDocument):
 
     if TYPE_CHECKING:  # pragma: no cover
+        id: ClassVar[ObjectId]
+        __fields__: ClassVar[dict[str, ModelField]]
+        __meta__: ClassVar[type[MetaConfig]]
+        __encoder__: ClassVar[CodecOptions]
+        __collection__: ClassVar[Collection]
+        __primary_key__: ClassVar[str]
 
         def __init_subclass__(
             cls,
             *,
             name: str | None = None,
             db: Database | str | None = None,
-            embedded: bool = False,
-            indexes: Sequence[Index] | None = None,
+            **kwargs: Any,
         ) -> None:
             ...
+
+    Meta = MetaConfig
 
     @property
     def pk(self) -> Any:
         """主键值"""
-        return getattr(self, self.meta.primary_key)
+        return getattr(self, self.__primary_key__)
 
     async def save(self) -> Self:
-        """保存数据"""
-        await self.meta.collection.insert_one(self.doc())
+        """保存文档"""
+        await self.__collection__.insert_one(self.doc())
         return self
 
-    async def update(self, **kwargs) -> bool:
-        """更新数据"""
+    async def update(self, **kwargs: Any) -> bool:
+        """更新文档"""
         if kwargs:
-            values = field_validate(self.__class__, kwargs)
+            values = validate_fields(self.__class__, kwargs)
             self = self.copy(update=values)
-        result: UpdateResult = await self.meta.collection.update_one(
-            {"_id": self.pk}, {"$set": self.doc(exclude={self.meta.primary_key})}
+        result: UpdateResult = await self.__collection__.update_one(
+            {"_id": self.pk}, {"$set": self.doc(exclude={self.__primary_key__})}
         )
         return bool(result.modified_count)
 
     async def delete(self) -> bool:
-        """删除数据"""
-        result: DeleteResult = await self.meta.collection.delete_one({"_id": self.pk})
+        """删除文档"""
+        result: DeleteResult = await self.__collection__.delete_one({"_id": self.pk})
         return bool(result.deleted_count)
 
-    def doc(self, **kwargs) -> dict[str, Any]:
+    def doc(self, **kwargs: Any) -> dict[str, Any]:
         """转换为 MongoDB 文档"""
-        if self.meta.by_alias:
-            kwargs["by_alias"] = True
+        kwargs["by_alias"] = self.__meta__.by_alias
         data = self.dict(**kwargs)
-        pk = self.meta.primary_key
+        pk = self.__primary_key__
         exclude = kwargs.get("exclude")
         if not (exclude and pk in exclude):
             data["_id"] = data.pop(pk)
@@ -193,15 +199,21 @@ class Model(BaseModel, metaclass=ModelMeta):
     @classmethod
     def from_doc(cls, document: dict[str, Any]) -> Self:
         """从文档构建模型实例"""
-        document[cls.meta.primary_key] = document.pop("_id")
+        with contextlib.suppress(KeyError):
+            document[cls.__primary_key__] = document.pop("_id")
         return cls(**document)
 
     @classmethod
+    async def save_all(cls, *documents: Self) -> None:
+        """保存全部文档"""
+        await cls.__collection__.insert_many(doc.doc() for doc in documents)
+
+    @classmethod
     def aggregate(
-        cls, pipeline: Pipeline | Sequence[Mapping[str, Any]], *args, **kwargs
+        cls, pipeline: Pipeline | Sequence[Mapping[str, Any]], *args: Any, **kwargs: Any
     ) -> AggregateResult:
         """聚合查询"""
-        cursor = cls.meta.collection.aggregate(pipeline, *args, **kwargs)
+        cursor = cls.__collection__.aggregate(pipeline, *args, **kwargs)
         return AggregateResult(cursor)
 
     @classmethod
@@ -209,7 +221,7 @@ class Model(BaseModel, metaclass=ModelMeta):
         cls,
         *args: FindMapping | Expression | bool,
     ) -> FindResult[Self]:
-        """使用表达式查询数据"""
+        """使用表达式查询文档"""
         if all_check(args, Expression | Mapping):
             return FindResult(cls, *args)  # type: ignore
         else:
@@ -217,8 +229,29 @@ class Model(BaseModel, metaclass=ModelMeta):
 
     @classmethod
     async def get(cls, _id: Any) -> Self | None:
-        """通过主键查询数据"""
+        """通过主键查询文档"""
         return await cls.find({"_id": _id}).get()
 
+    @classmethod
+    async def get_or_create(
+        cls,
+        *args: FindMapping | Expression | bool,
+        defaults: FindMapping | Self | None = None,
+    ) -> Self:
+        """获取文档, 如果不存在, 则创建"""
+        result: FindResult[Self] = FindResult(cls, *args)  # type: ignore
+        if model := await result.get():
+            return model
+        default = defaults.doc() if isinstance(defaults, Document) else defaults or {}
+        data = flat_filter(result.filter)
+        merge_map(data, default)
+        model = cls.from_doc(data)
+        return await model.save()
+
+    class Config:
+        validate_assignment = True
+
+
+class EmbeddedDocument(BaseModel, metaclass=MetaEmbeddedDocument):
     class Config:
         validate_assignment = True

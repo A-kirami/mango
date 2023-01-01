@@ -1,5 +1,6 @@
+import os
 from collections.abc import Iterator
-from typing import Any
+from typing import Any, ClassVar
 
 from motor.motor_asyncio import (
     AsyncIOMotorClient,
@@ -7,6 +8,9 @@ from motor.motor_asyncio import (
     AsyncIOMotorDatabase,
 )
 from typing_extensions import Self
+
+DEFAULT_CONNECT_URI = os.getenv("MANGO_URI") or "mongodb://localhost:27017"
+DEFAULT_DATABASE_NAME = "test"
 
 
 class Collection:
@@ -33,7 +37,7 @@ class Database:
         self.db = db
         self.collections: dict[str, Collection] = {}
 
-    def __getattr__(self, name) -> Collection:
+    def __getattr__(self, name: str) -> Collection:
         try:
             return self.collections[name]
         except KeyError:
@@ -50,8 +54,8 @@ class Database:
     def __repr__(self) -> str:
         return (
             f"Database(name={self.name}, "
-            "host={self.client.HOST}, "
-            "port={self.client.PORT})"
+            f"host={self.client.HOST}, "
+            f"port={self.client.PORT})"
         )
 
     async def drop_collection(self, collection: str | Collection):
@@ -70,14 +74,15 @@ class Database:
 
 
 class Client:
-    _client: list[Self] = []
+    _clients: ClassVar[set[Self]] = set()
 
-    def __init__(self, uri: str = "mongodb://localhost:27017", **kwargs) -> None:
-        self.client = AsyncIOMotorClient(uri, **kwargs)
+    def __init__(self, uri: str = DEFAULT_CONNECT_URI, **kwargs: Any) -> None:
+        kwargs.setdefault("host", uri)
+        self.client = AsyncIOMotorClient(**kwargs)
         self.databases: dict[str, Database] = {}
-        self.__class__._client.append(self)
+        self.__class__._clients.add(self)
 
-    def __getattr__(self, name) -> Database:
+    def __getattr__(self, name: str) -> Database:
         try:
             return self.databases[name]
         except KeyError:
@@ -94,11 +99,31 @@ class Client:
     def __repr__(self) -> str:
         return f"Client(host={self.host}, port={self.port})"
 
+    def close(self) -> None:
+        """关闭连接"""
+        self.client.close()
+        self.__class__._clients.remove(self)
+
     async def drop_database(self, database: str | Database):
         """删除数据库"""
         name = database if isinstance(database, str) else database.name
         await self.client.drop_database(name)
         self.databases.pop(name, None)
+
+    @classmethod
+    def get_database(cls, db: Database | str | None = None) -> Database:
+        """获取数据库"""
+        try:
+            client = next(iter(cls._clients))
+        except StopIteration:
+            client = cls()
+
+        if isinstance(db, Database):
+            return db
+        elif isinstance(db, str):
+            return client[db]
+        else:
+            return client.default_database
 
     @property
     def default_database(self) -> Database:
@@ -106,7 +131,8 @@ class Client:
         try:
             return next(iter(self.databases.values()))
         except StopIteration:
-            return self.test
+            ddb = self.client.get_default_database(DEFAULT_DATABASE_NAME)
+            return self[ddb.name]
 
     @property
     def host(self) -> str:
@@ -119,12 +145,3 @@ class Client:
     @property
     def address(self) -> tuple[str, int]:
         return self.client.address
-
-
-def connect(
-    db: str | None = None, /, uri: str = "mongodb://localhost:27017", **kwargs
-) -> Client:
-    client = Client(uri, **kwargs)
-    db_name = db or client.client.get_default_database("test").name
-    getattr(client, db_name)
-    return client
