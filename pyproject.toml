@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "mango-odm"
-version = "0.2.2"
+version = "0.3.0"
 description = "🥭 Async MongoDB ODM with type hints in Python"
-authors = ["Akirami <Akiramiaya@outlook.com>"]
+authors = ["Akirami <akiramiaya@outlook.com>"]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/A-kirami/mango"
@@ -28,11 +28,12 @@ optional = true
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.1.2"
-pytest-cov = "^3.0.0"
+pytest-cov = "^4.0.0"
 allure-pytest = "^2.9.45"
 pytest-asyncio = "^0.18.0"
 hypothesis = "^6.43.3"
 pytest-sugar = "^0.9.5"
+Faker = "^15.3.4"
 
 [tool.black]
 target-version = ["py310"]
