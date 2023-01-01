@@ -7,7 +7,7 @@ from pydantic.fields import Undefined
 from pydantic.typing import NoArgAnyCallable
 from typing_extensions import Self
 
-from mango.index import Index
+from mango.index import Index, IndexType
 
 
 class ObjectIdField(ObjectId):
@@ -29,7 +29,7 @@ class ObjectIdField(ObjectId):
 class FieldInfo(PDFieldInfo):
     def __init__(self, default: Any = Undefined, **kwargs: Any) -> None:
         self.primary_key: bool = kwargs.pop("primary_key", False)
-        self.index: bool | str | int | Index | None = kwargs.pop("index", None)
+        self.index: bool | IndexType | Index | None = kwargs.pop("index", None)
         self.expire: int | None = kwargs.pop("expire", None)
         self.unique: bool = kwargs.pop("unique", None)
         super().__init__(default=default, **kwargs)
@@ -62,7 +62,7 @@ def Field(
     discriminator: str | None = None,
     repr: bool = True,
     primary_key: bool = False,
-    index: bool | str | int | Index | None = None,
+    index: bool | IndexType | Index | None = None,
     expire: int | None = None,
     unique: bool = False,
     **extra: Any,

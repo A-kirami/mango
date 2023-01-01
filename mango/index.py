@@ -50,19 +50,23 @@ class Index(pymongo.IndexModel):
 
     def __init__(
         self,
-        *key: str | IndexTuple,
+        *keys: str | IndexTuple,
         name: str | None = None,
         unique: bool = False,
         background: bool = False,
         sparse: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
-        key = tuple((k, self.ASC) if isinstance(k, str) else k for k in key)
+        keys = tuple((k, self.ASC) if isinstance(k, str) else k for k in keys)
+        params = {
+            "name": name,
+            "unique": unique,
+            "background": background,
+            "sparse": sparse,
+        }
+        params = {k: v for k, v in params.items() if v}
         super().__init__(
-            key,
-            name=name,
-            unique=unique,
-            background=background,
-            sparse=sparse,
+            keys,
+            **params,
             **kwargs,
         )
