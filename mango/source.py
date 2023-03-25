@@ -63,7 +63,7 @@ class Mango:
     @classmethod
     def disconnect(cls, *clients: Client) -> None:
         """断开连接"""
-        for client in Client._clients:
+        for client in Client._clients.copy():
             if not clients or client in clients:
                 client.close()
 
