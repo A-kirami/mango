@@ -68,7 +68,7 @@ def validate_fields(
         raise ValueError(f"这些字段在 {model.__name__} 中不存在: {miss}")
 
     fields = {
-        k: (v.type_, v.field_info)
+        k: (v.outer_type_, v.field_info)
         for k, v in model.__fields__.items()
         if k in input_data
     }
