@@ -166,8 +166,8 @@ class Document(BaseModel, metaclass=MetaDocument):
         """主键值"""
         return getattr(self, self.__primary_key__)
 
-    async def save(self) -> Self:
-        """保存文档"""
+    async def insert(self) -> Self:
+        """插入文档"""
         await self.__collection__.insert_one(self.doc())
         return self
 
@@ -180,6 +180,15 @@ class Document(BaseModel, metaclass=MetaDocument):
             {"_id": self.pk}, {"$set": self.doc(exclude={self.__primary_key__})}
         )
         return bool(result.modified_count)
+
+    async def save(self, **kwargs: Any) -> Self:
+        """保存文档，如果文档不存在，则插入，否则更新它。"""
+        existing_doc = await self.__collection__.find_one({"_id": self.pk})
+        if existing_doc:
+            await self.update(**kwargs)
+        else:
+            await self.insert()
+        return self
 
     async def delete(self) -> bool:
         """删除文档"""
