@@ -175,7 +175,8 @@ class Document(BaseModel, metaclass=MetaDocument):
         """更新文档"""
         if kwargs:
             values = validate_fields(self.__class__, kwargs)
-            self = self.copy(update=values)
+            for field, value in values.items():
+                setattr(self, field, value)
         result: UpdateResult = await self.__collection__.update_one(
             {"_id": self.pk}, {"$set": self.doc(exclude={self.__primary_key__})}
         )
