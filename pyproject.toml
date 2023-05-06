@@ -33,7 +33,7 @@ allure-pytest = "^2.9.45"
 pytest-asyncio = "^0.18.0"
 hypothesis = "^6.43.3"
 pytest-sugar = "^0.9.5"
-Faker = "^15.3.4"
+Faker = "^18.0.0"
 
 [tool.black]
 target-version = ["py310"]
