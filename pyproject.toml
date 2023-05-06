@@ -20,7 +20,7 @@ pydantic = "^1.10.0"
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-black = "^22.1.0"
+black = "^23.0.0"
 isort = "^5.10.1"
 
 [tool.poetry.group.test]
