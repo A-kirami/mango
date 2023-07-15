@@ -1,13 +1,21 @@
 import re
-from collections.abc import Callable, Generator, Iterable, Sequence
-from types import UnionType
-from typing import TYPE_CHECKING, Any
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    Iterable,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import pydantic
 from pydantic.fields import ModelField
 
 from mango.fields import FieldInfo
-from mango.index import Index, Order, Attr
+from mango.index import Attr, Index, Order
 
 if TYPE_CHECKING:  # pragma: no cover
     from mango.models import Document
@@ -21,10 +29,7 @@ def to_snake_case(string: str) -> str:
 
 def all_check(
     iter_obj: Iterable[object],
-    type_or_func: type
-    | UnionType
-    | Callable
-    | tuple[type | UnionType | tuple[Any, ...], ...],
+    type_or_func: Union[type, Callable[..., Any], Tuple[type, ...]],
 ) -> bool:
     """
     如果可迭代对象中的所有元素为指定类型，则返回True。
@@ -38,10 +43,7 @@ def all_check(
 
 def any_check(
     iter_obj: Iterable[object],
-    type_or_func: type
-    | UnionType
-    | Callable
-    | tuple[type | UnionType | tuple[Any, ...], ...],
+    type_or_func: Union[type, Callable[..., Any], Tuple[type, ...]],
 ) -> bool:
     """
     如果可迭代对象中的任意元素为指定类型，则返回True。
@@ -57,15 +59,13 @@ def is_sequence(
     iter_obj: Sequence[object],
 ) -> bool:
     """判断是否为非字符串的序列对象"""
-    return isinstance(iter_obj, Sequence) and not isinstance(iter_obj, bytes | str)
+    return isinstance(iter_obj, Sequence) and not isinstance(iter_obj, (bytes, str))
 
 
-def validate_fields(
-    model: type["Document"], input_data: dict[str, Any]
-) -> dict[str, Any]:
+def validate_fields(model: "Document", input_data: Dict[str, Any]) -> Dict[str, Any]:
     """验证模型的指定字段"""
-    if miss := set(input_data) - set(model.__fields__):
-        raise ValueError(f"这些字段在 {model.__name__} 中不存在: {miss}")
+    if missing_fields := set(input_data) - set(model.__fields__):
+        raise ValueError(f"这些字段在 {model.__name__} 中不存在: {missing_fields}")
 
     fields = {
         k: (v.outer_type_, v.field_info)
@@ -81,7 +81,7 @@ def validate_fields(
     return values
 
 
-def add_fields(model: type["Document"], **field_definitions: Any):
+def add_fields(model: "Document", **field_definitions: Any):
     """动态添加字段
 
     来源见: https://github.com/pydantic/pydantic/issues/1937
@@ -90,7 +90,7 @@ def add_fields(model: type["Document"], **field_definitions: Any):
     new_annotations: dict[str, type | None] = {}
 
     for f_name, f_def in field_definitions.items():
-        if isinstance(f_def, tuple):
+        if isinstance(f_def, Tuple):
             try:
                 f_annotation, f_value = f_def
             except ValueError as e:
@@ -117,7 +117,7 @@ def add_fields(model: type["Document"], **field_definitions: Any):
     model.__annotations__.update(new_annotations)
 
 
-def get_indexes(model: type["Document"]) -> Generator[Index, None, None]:
+def get_indexes(model: "Document") -> Generator[Index, None, None]:
     """获取模型中定义的索引, 包括字段与元配置"""
     for name, field in model.__fields__.items():
         finfo = field.field_info
@@ -129,7 +129,8 @@ def get_indexes(model: type["Document"]) -> Generator[Index, None, None]:
                     yield Index((name, index))
                 else:
                     yield index
-            elif expire := finfo.expire:
+            elif hasattr(finfo, "expire"):
+                expire = finfo.expire
                 yield Index(name, expireAfterSeconds=expire)
 
     for index in model.__meta__.indexes:

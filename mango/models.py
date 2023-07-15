@@ -1,8 +1,17 @@
 import contextlib
-from collections.abc import Mapping, MutableMapping, Sequence
 from functools import reduce
-from typing import TYPE_CHECKING, Any, ClassVar, Tuple, Dict, Optional, Union
-
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Dict,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import bson
 from bson import ObjectId
@@ -43,8 +52,8 @@ def is_need_default_pk(
 
 def set_default_pk(model: "Document") -> None:
     value = Field(default_factory=ObjectId, allow_mutation=False, init=False)
-    add_fields(model, id=(ObjectIdField, value))
-    model.__primary_key__ = "id"
+    add_fields(model, id=(ObjectIdField, value)) # type: ignore
+    model.__primary_key__ = "id" # type: ignore
 
 
 def flat_filter(data: Mapping[str, Any]) -> Dict[str, Any]:
@@ -84,7 +93,7 @@ class MetaDocument(ModelMetaclass):
 
         for base in reversed(bases):
             if base != BaseModel and issubclass(base, Document):
-                meta = inherit_meta(base.__meta__, MetaConfig)
+                meta = inherit_meta(base.__meta__, MetaConfig) # type: ignore
 
         kwargs.setdefault("database", kwargs.pop("db", None))
 
@@ -220,7 +229,10 @@ class Document(BaseModel, metaclass=MetaDocument):
 
     @classmethod
     def aggregate(
-        cls, pipeline: Pipeline | Sequence[Mapping[str, Any]], *args: Any, **kwargs: Any
+        cls,
+        pipeline: Union[Pipeline, Sequence[Mapping[str, Any]]],
+        *args: Any,
+        **kwargs: Any,
     ) -> AggregateResult:
         """聚合查询"""
         cursor = cls.__collection__.aggregate(pipeline, *args, **kwargs)
@@ -229,24 +241,24 @@ class Document(BaseModel, metaclass=MetaDocument):
     @classmethod
     def find(
         cls,
-        *args: FindMapping | Expression | bool,
+        *args: Union[FindMapping, Expression, bool],
     ) -> FindResult[Self]:
         """使用表达式查询文档"""
-        if all_check(args, Expression | Mapping):
+        if all_check(args, (Expression, Mapping)):
             return FindResult(cls, *args)  # type: ignore
         else:
             raise TypeError("查询表达式类型不正确")
 
     @classmethod
-    async def get(cls, _id: Any) -> Self | None:
+    async def get(cls, _id: Any) -> Optional[Self]:
         """通过主键查询文档"""
         return await cls.find({"_id": _id}).get()
 
     @classmethod
     async def get_or_create(
         cls,
-        *args: FindMapping | Expression | bool,
-        defaults: FindMapping | Self | None = None,
+        *args: Union[FindMapping, Expression, bool],
+        defaults: Optional[Union[FindMapping, Self]] = None,
     ) -> Self:
         """获取文档, 如果不存在, 则创建"""
         result: FindResult[Self] = FindResult(cls, *args)  # type: ignore

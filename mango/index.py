@@ -1,6 +1,5 @@
-from collections.abc import Mapping
 from enum import Enum, unique
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Mapping, Optional, Tuple, Union
 
 import pymongo
 
@@ -28,6 +27,10 @@ class Attr(str, IndexEnum):
     """散列索引"""
     TEXT = pymongo.TEXT
     """文本索引"""
+
+
+IndexType = Union[Order, Attr]
+IndexTuple = Tuple[str, Union[Order, Attr, Mapping[str, Any]]]
 
 
 class Index(pymongo.IndexModel):
@@ -62,7 +65,7 @@ class Index(pymongo.IndexModel):
         }
         params = {k: v for k, v in params.items() if v}
         super().__init__(
-            _keys,
+            _keys,  # type: ignore
             **params,
             **kwargs,
         )

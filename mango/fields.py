@@ -1,5 +1,13 @@
-from collections.abc import Callable, Generator, Mapping
-from typing import AbstractSet, Any, AnyStr, Union, Optional
+from typing import (
+    AbstractSet,
+    Any,
+    AnyStr,
+    Callable,
+    Generator,
+    Mapping,
+    Optional,
+    Union,
+)
 
 from bson import ObjectId
 from pydantic.fields import FieldInfo as PDFieldInfo
@@ -7,12 +15,14 @@ from pydantic.fields import Undefined
 from pydantic.typing import NoArgAnyCallable
 from typing_extensions import Self
 
-from mango.index import Index, Order, Attr
+from mango.index import Attr, Index, Order
 
 
 class ObjectIdField(ObjectId):
     @classmethod
-    def __get_validators__(cls) -> Generator[Callable[[AnyStr], Self], None, None]:
+    def __get_validators__(
+        cls,
+    ) -> Generator[Callable[[str], "ObjectIdField"], None, None]:
         yield cls.validate
 
     @classmethod

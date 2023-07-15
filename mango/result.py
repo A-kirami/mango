@@ -1,5 +1,16 @@
-from collections.abc import AsyncGenerator, Generator, Mapping
-from typing import TYPE_CHECKING, Any, Generic, TypeAlias, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncGenerator,
+    Dict,
+    Generator,
+    Generic,
+    List,
+    Mapping,
+    Optional,
+    TypeVar,
+    Union,
+)
 
 from motor.motor_asyncio import AsyncIOMotorCursor, AsyncIOMotorLatentCommandCursor
 from pydantic import BaseModel
@@ -14,39 +25,39 @@ if TYPE_CHECKING:  # pragma: no cover
 
 T_Model = TypeVar("T_Model", bound="Document")
 
-KeyField: TypeAlias = str | ExpressionField
+KeyField = Union[str, ExpressionField]
 
-FindMapping: TypeAlias = Mapping[KeyField, Any]
+FindMapping = Mapping[KeyField, Any]
 
-DirectionType: TypeAlias = Order
+DirectionType = Order
 
-SortType: TypeAlias = tuple[str, DirectionType]
+SortType = Union[str, DirectionType]
 
 
 class FindOptions(BaseModel):
     limit: int = 0
     skip: int = 0
-    sort: list[SortType] = []
+    sort: List[SortType] = []
 
-    def kwdict(self, *exclude: str) -> dict[str, Any]:
+    def kwdict(self, *exclude: str) -> Dict[str, Any]:
         return self.dict(exclude=set(exclude), exclude_defaults=True)
 
 
 class FindResult(Generic[T_Model]):
     def __init__(
         self,
-        model: type[T_Model],
-        *filter: FindMapping | Expression,
+        model: T_Model,
+        *filter: Union[FindMapping, Expression],
     ) -> None:
         self.model = model
         self.collection = model.__collection__
         self._filter = filter
         self.options = FindOptions()
 
-    def __await__(self) -> Generator[None, None, list[T_Model]]:
+    def __await__(self) -> Generator[None, None, List[T_Model]]:
         """`await` : 等待时，将返回获取的模型列表"""
         documents = yield from self.cursor.to_list(length=None).__await__()
-        instances: list[T_Model] = []
+        instances: List[T_Model] = []
         for document in documents:
             instances.append(self.model.from_doc(document))
             yield
@@ -58,13 +69,13 @@ class FindResult(Generic[T_Model]):
             yield self.model.from_doc(document)
 
     @property
-    def cursor(self) -> AsyncIOMotorCursor: # type: ignore
+    def cursor(self) -> AsyncIOMotorCursor:  # type: ignore
         return self.collection.find(self.filter, **self.options.kwdict())
 
     @property
-    def filter(self) -> dict[str, Any]:
+    def filter(self) -> Dict[str, Any]:
         """查询过滤条件"""
-        compiled: dict[str, Any] = {}
+        compiled: Dict[str, Any] = {}
         for condition in self._filter:
             if isinstance(condition, Mapping):
                 condition = dict(condition)
@@ -72,14 +83,14 @@ class FindResult(Generic[T_Model]):
                 condition = condition.struct()
             else:
                 raise TypeError("查询过滤条件不正确, 应为映射或表达式")
-            compiled |= self._compile(condition)
+            compiled.update(self._compile(condition))
         return compiled
 
     def _compile(
         self,
-        source: Mapping[KeyField, Any] | Mapping[str, Any],
-    ) -> dict[str, Any]:
-        compiled: dict[str, Any] = {}
+        source: Union[Mapping[KeyField, Any], Mapping[str, Any]],
+    ) -> Dict[str, Any]:
+        compiled: Dict[str, Any] = {}
 
         for key, value in source.items():
             key = str(key)
@@ -153,7 +164,7 @@ class FindResult(Generic[T_Model]):
             self.filter, **self.options.kwdict("sort")
         )
 
-    async def get(self) -> T_Model | None:
+    async def get(self) -> Optional[T_Model]:
         """
         从数据库中获取单个文档。
         返回单个文档，如果没有找到匹配的文档，返回“None”。
@@ -173,16 +184,16 @@ class FindResult(Generic[T_Model]):
 
 
 class AggregateResult:
-    def __init__(self, cursor: AsyncIOMotorLatentCommandCursor) -> None: # type: ignore
+    def __init__(self, cursor: AsyncIOMotorLatentCommandCursor) -> None:  # type: ignore
         self.cursor = cursor
 
-    def __await__(self) -> Generator[None, None, list[dict[str, Any]]]:
+    def __await__(self) -> Generator[None, None, List[Dict[str, Any]]]:
         """
         `await` : 等待时，将返回聚合管道的结果文档列表
         """
         return (yield from self.cursor.to_list(length=None).__await__())
 
-    async def __aiter__(self) -> AsyncGenerator[dict[str, Any], None]:
+    async def __aiter__(self) -> AsyncGenerator[Dict[str, Any], None]:
         """`async for`: 异步迭代聚合管道的结果文档"""
         async for document in self.cursor:  # type: ignore
             yield document

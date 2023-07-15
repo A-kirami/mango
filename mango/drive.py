@@ -1,6 +1,5 @@
 import os
-from collections.abc import Iterator
-from typing import Any, ClassVar, Set, Tuple, Union
+from typing import Any, ClassVar, Iterator, Set, Tuple, Union
 
 from motor.motor_asyncio import (
     AsyncIOMotorClient,

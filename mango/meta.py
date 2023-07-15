@@ -1,5 +1,4 @@
-from collections.abc import Mapping, Sequence
-from typing import Any, Optional, Tuple, Type, Union
+from typing import Any, Mapping, Optional, Sequence, Tuple, Type, Union
 
 from mango.drive import Database
 from mango.encoder import EncodeType

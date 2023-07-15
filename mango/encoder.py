@@ -1,6 +1,5 @@
-from collections.abc import Callable
 from enum import Enum
-from typing import Any, Callable, ClassVar, Dict, Tuple, Type, Union, Optional
+from typing import Any, Callable, ClassVar, Dict, Optional, Tuple, Type, Union
 
 from bson.codec_options import CodecOptions, TypeRegistry
 

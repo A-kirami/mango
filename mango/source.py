@@ -1,5 +1,5 @@
 import asyncio
-from typing import TYPE_CHECKING, Any, ClassVar, Set, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, Set
 
 from mango.drive import DEFAULT_CONNECT_URI, Client
 from mango.utils import get_indexes, to_snake_case

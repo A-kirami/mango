@@ -1,17 +1,16 @@
-from collections.abc import Mapping, Sequence
-from typing import Any, Literal, TypeAlias
+from typing import Any, Literal, Mapping, Sequence, Union
 
 from typing_extensions import Self
 
 from mango.index import Order
 
-SortOrder: TypeAlias = Order | Literal[1, -1]
+SortOrder = Union[Order, Literal[1, -1]]
 
 
-class Pipeline(list[Mapping[str, Any]]):
+class Pipeline(list):
     """聚合管道阶段"""
 
-    def __init__(self, *stages: Mapping[str, Any]) -> None:
+    def __init__(self, *stages: Mapping) -> None:
         super().__init__(stages)
 
     def stage(self, key: str, value: Any) -> Self:
@@ -23,9 +22,9 @@ class Pipeline(list[Mapping[str, Any]]):
     def bucket(
         self,
         group_by: Any,
-        boundaries: Sequence[int | float],
-        default: str | None = None,
-        output: Mapping[str, Mapping[str, Any]] | None = None,
+        boundaries: Sequence,
+        default: Union[str, None] = None,
+        output: Union[Mapping, None] = None,
     ) -> Self:
         """
         根据指定的表达式和存储桶边界将传入文档分类到称为存储桶的组中，并为每个存储桶输出一个文档。
@@ -73,7 +72,7 @@ class Pipeline(list[Mapping[str, Any]]):
         """
         return self.stage("documents", expression)
 
-    def facet(self, **fields: Self | Sequence[Mapping[str, Any]]) -> Self:
+    def facet(self, **fields: Union[Self, Sequence[Mapping]]) -> Self:
         """
         在同一组输入文档的单个阶段内处理多个聚合管道。每个子管道在输出文档中都有自己的字段，其结果存储为一个文档数组。
         输入文档只被传递到 `$facet` 阶段一次。`$facet` 支持对同一组输入文档进行各种聚合，无需多次检索输入文档。
@@ -86,22 +85,12 @@ class Pipeline(list[Mapping[str, Any]]):
 
     def fill(
         self,
-        output: Mapping[str, Any],
+        output: Mapping,
         partition_by: Any = None,
-        partition_by_fields: Sequence[str] | None = None,
-        sort_by: Mapping[str, SortOrder] | None = None,
+        partition_by_fields: Union[Sequence[str], None] = None,
+        sort_by: Union[Mapping[str, SortOrder], None] = None,
     ) -> Self:
-        """
-        填充文档中的空值和缺少的字段值。
-
-        output: 指定一个字典，该字典包含要填充缺失值的每个字段输出对象的字典。对象名称是要填充的字段的名称，对象值指定如何填充该字段。
-        partition_by: 指定用于对文档进行分组的表达式。`partition_by` 和 `partition_by_fields` 是互斥的。
-        partition_by_fields: 指定字段数组，以作为文档分组的复合键。`partition_by` 和 `partition_by_fields` 是互斥的。
-        sort_by: 指定用于对每个分区内的文档进行排序的字段。
-
-        [$fill (aggregation)](https://www.mongodb.com/docs/manual/reference/operator/aggregation/fill/)
-        """
-        struct: dict[str, Any] = {
+        struct: dict = {
             "output": output,
         }
         if partition_by:
@@ -114,7 +103,7 @@ class Pipeline(list[Mapping[str, Any]]):
             struct["sortBy"] = sort_by
         return self.stage("fill", struct)
 
-    def group(self, id: Any, **fields: Mapping[str, Any]) -> Self:
+    def group(self, id: Any, **fields: Mapping) -> Self:
         """
         `$group` 阶段根据“组键”将文档分成多个组。
         组键通常是一个字段或一组字段。组键也可以是表达式的结果。
@@ -140,12 +129,12 @@ class Pipeline(list[Mapping[str, Any]]):
 
     def lookup(
         self,
-        from_: str | None = None,
-        local_field: str | None = None,
-        foreign_field: str | None = None,
-        let: Mapping[str, Any] | None = None,
-        pipeline: Self | Sequence[Mapping[str, Any]] | None = None,
-        as_: str | None = None,
+        from_: Union[str, None] = None,
+        local_field: Union[str, None] = None,
+        foreign_field: Union[str, None] = None,
+        let: Union[Mapping, None] = None,
+        pipeline: Union[Self, Sequence[Mapping], None] = None,
+        as_: Union[str, None] = None,
     ) -> Self:
         """
         对同一数据库中的集合执行左外联接，以从“联接”集合中筛选文档进行处理。
@@ -169,14 +158,14 @@ class Pipeline(list[Mapping[str, Any]]):
                     "localField": local_field,
                     "foreignField": foreign_field,
                     "let": let,
-                    "pipeline": pipeline,
+                    Self: pipeline,
                     "as": as_,
                 }.items()
                 if v is None
             },
         )
 
-    def match(self, query: Mapping[str, Any]) -> Self:
+    def match(self, query: Mapping) -> Self:
         """
         筛选文档流，仅将匹配指定条件的文档传递到下一个管道阶段。
 
@@ -189,12 +178,14 @@ class Pipeline(list[Mapping[str, Any]]):
     def merge(
         self,
         collection: str,
-        database: str | None = None,
-        let: Mapping[str, Any] | None = None,
-        on: str | Sequence[str] | None = None,
-        matched: Literal["replace", "keepExisting", "merge", "fail"]
-        | Self
-        | Sequence[Mapping[str, Any]] = "merge",
+        database: Union[str, None] = None,
+        let: Union[Mapping, None] = None,
+        on: Union[str, Sequence[str], None] = None,
+        matched: Union[
+            Literal["replace", "keepExisting", "merge", "fail"],
+            Self,
+            Sequence[Mapping],
+        ] = "merge",
         not_matched: Literal["insert", "discard", "fail"] = "insert",
     ) -> None:
         """
@@ -220,7 +211,7 @@ class Pipeline(list[Mapping[str, Any]]):
             struct["on"] = on
         self.stage("merge", struct)
 
-    def out(self, collection: str, database: str | None = None) -> Self:
+    def out(self, collection: str, database: Union[str, None] = None) -> Self:
         """
         获取聚合管道返回的文档并将它们写入指定的集合。
 
@@ -233,7 +224,7 @@ class Pipeline(list[Mapping[str, Any]]):
             "out", {"db": database, "coll": collection} if database else collection
         )
 
-    def project(self, **fields: bool | Mapping[str, Any]) -> Self:
+    def project(self, **fields: Union[bool, Mapping]) -> Self:
         """
         将带有指定字段的文档传递到管道中的下一阶段。指定的字段可以是输入文档中的现有字段或新计算的字段。
 
@@ -306,7 +297,7 @@ class Pipeline(list[Mapping[str, Any]]):
     def union(
         self,
         collection: str,
-        pipeline: Self | Sequence[Mapping[str, Any]] | None = None,
+        pipeline: Union[Self, Sequence[Mapping], None] = None,
     ) -> Self:
         """
         执行两个集合的联合。
@@ -319,7 +310,7 @@ class Pipeline(list[Mapping[str, Any]]):
         """
         return self.stage(
             "unionWith",
-            {"coll": collection, "pipeline": pipeline} if pipeline else collection,
+            {"coll": collection, Self: pipeline} if pipeline else collection,
         )
 
     def unset(self, *fields: str) -> Self:
@@ -333,7 +324,10 @@ class Pipeline(list[Mapping[str, Any]]):
         return self.stage("unset", fields)
 
     def unwind(
-        self, path: str, index_field: str | None = None, preserve_empty: bool = False
+        self,
+        path: str,
+        index_field: Union[str, None] = None,
+        preserve_empty: bool = False,
     ) -> Self:
         """
         从输入文档中解构数组字段以输出每个元素的文档。每个输出文档都是输入文档，数组字段的值由元素替换。
