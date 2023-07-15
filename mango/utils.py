@@ -7,7 +7,7 @@ import pydantic
 from pydantic.fields import ModelField
 
 from mango.fields import FieldInfo
-from mango.index import Index, IndexType
+from mango.index import Index, Order, Attr
 
 if TYPE_CHECKING:  # pragma: no cover
     from mango.models import Document
@@ -125,7 +125,7 @@ def get_indexes(model: type["Document"]) -> Generator[Index, None, None]:
             if index := finfo.index:
                 if index is True:
                     yield Index(name)
-                elif isinstance(index, IndexType):
+                elif isinstance(index, (Order, Attr)):
                     yield Index((name, index))
                 else:
                     yield index

@@ -1,10 +1,10 @@
 from collections.abc import Callable
 from enum import Enum
-from typing import Any, ClassVar, TypeAlias
+from typing import Any, Callable, ClassVar, Dict, Tuple, Type, Union, Optional
 
 from bson.codec_options import CodecOptions, TypeRegistry
 
-EncodeType: TypeAlias = dict[type[Any] | tuple[type[Any], ...], Callable[..., Any]]
+EncodeType = Dict[Union[Type[Any], Tuple[Type[Any], ...]], Callable[..., Any]]
 
 
 class Encoder:
@@ -16,13 +16,14 @@ class Encoder:
     @classmethod
     def create(
         cls,
-        encode_type: EncodeType | None = None,
+        encode_type: Optional[EncodeType] = None,
     ) -> CodecOptions:
         """创建一个编码器"""
         encode_type = encode_type or {}
 
         def encoder(value: Any) -> Any:
-            for type_, encoder in (encode_type | cls.default_encode_type).items():
+            combined_encode_type = {**encode_type, **cls.default_encode_type}
+            for type_, encoder in combined_encode_type.items():
                 if isinstance(value, type_):
                     return encoder(value)
             raise TypeError(f"无法编码 {type(value)} 类型的对象: {value}")
@@ -32,4 +33,4 @@ class Encoder:
     @classmethod
     def add_encode_type(cls, encode_type: EncodeType) -> None:
         """添加新的编码类型"""
-        cls.default_encode_type |= encode_type
+        cls.default_encode_type = {**cls.default_encode_type, **encode_type}

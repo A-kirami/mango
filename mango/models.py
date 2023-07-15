@@ -1,7 +1,8 @@
 import contextlib
 from collections.abc import Mapping, MutableMapping, Sequence
 from functools import reduce
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Tuple, Dict, Optional, Union
+
 
 import bson
 from bson import ObjectId
@@ -26,7 +27,7 @@ operators = tuple(str(i) for i in Operators)
 
 
 def is_need_default_pk(
-    bases: tuple[type[Any], ...], annotate: dict[str, Any] | None = None
+    bases: Tuple[Any, ...], annotate: Optional[Dict[str, Any]] = None
 ) -> bool:
     # 未定义任何字段
     if not annotate:
@@ -40,17 +41,17 @@ def is_need_default_pk(
     return not any(getattr(base, "id", None) for base in bases)
 
 
-def set_default_pk(model: type["Document"]) -> None:
+def set_default_pk(model: "Document") -> None:
     value = Field(default_factory=ObjectId, allow_mutation=False, init=False)
     add_fields(model, id=(ObjectIdField, value))
     model.__primary_key__ = "id"
 
 
-def flat_filter(data: Mapping[str, Any]) -> dict[str, Any]:
+def flat_filter(data: Mapping[str, Any]) -> Dict[str, Any]:
     flatted = {}
     for key, value in data.items():
         if key.startswith(operators):
-            flatted |= flat_filter(reduce(lambda x, y: x | y, value))
+            flatted.update(flat_filter(reduce(lambda x, y: x | y, value)))
         elif "." in key:
             parent, child = key.split(".", maxsplit=1)
             flatted[parent] = flat_filter({child: value})
@@ -75,8 +76,8 @@ class MetaDocument(ModelMetaclass):
     def __new__(
         cls,
         cname: str,
-        bases: tuple[type[Any], ...],
-        attrs: dict[str, Any],
+        bases: Tuple[Any, ...],
+        attrs: Dict[str, Any],
         **kwargs: Any,
     ):
         meta = MetaConfig
@@ -128,8 +129,8 @@ class MetaEmbeddedDocument(ModelMetaclass):
     def __new__(
         cls,
         name: str,
-        bases: tuple[type[Any], ...],
-        attrs: dict[str, Any],
+        bases: Tuple[Any, ...],
+        attrs: Dict[str, Any],
         **kwargs: Any,
     ):
         scls = super().__new__(cls, name, bases, attrs, **kwargs)
@@ -141,11 +142,10 @@ class MetaEmbeddedDocument(ModelMetaclass):
 
 
 class Document(BaseModel, metaclass=MetaDocument):
-
     if TYPE_CHECKING:  # pragma: no cover
         id: ClassVar[ObjectId]
-        __fields__: ClassVar[dict[str, ModelField]]
-        __meta__: ClassVar[type[MetaConfig]]
+        __fields__: ClassVar[Dict[str, ModelField]]
+        __meta__: ClassVar[MetaConfig]
         __encoder__: ClassVar[CodecOptions]
         __collection__: ClassVar[Collection]
         __primary_key__: ClassVar[str]
@@ -153,8 +153,8 @@ class Document(BaseModel, metaclass=MetaDocument):
         def __init_subclass__(
             cls,
             *,
-            name: str | None = None,
-            db: Database | str | None = None,
+            name: Optional[str] = None,
+            db: Optional[Union[Database, str]] = None,
             **kwargs: Any,
         ) -> None:
             ...
@@ -196,7 +196,7 @@ class Document(BaseModel, metaclass=MetaDocument):
         result: DeleteResult = await self.__collection__.delete_one({"_id": self.pk})
         return bool(result.deleted_count)
 
-    def doc(self, **kwargs: Any) -> dict[str, Any]:
+    def doc(self, **kwargs: Any) -> Dict[str, Any]:
         """转换为 MongoDB 文档"""
         kwargs["by_alias"] = self.__meta__.by_alias
         data = self.dict(**kwargs)
@@ -207,7 +207,7 @@ class Document(BaseModel, metaclass=MetaDocument):
         return bson.decode(bson.encode(data, codec_options=self.__encoder__))
 
     @classmethod
-    def from_doc(cls, document: dict[str, Any]) -> Self:
+    def from_doc(cls, document: Dict[str, Any]) -> Self:
         """从文档构建模型实例"""
         with contextlib.suppress(KeyError):
             document[cls.__primary_key__] = document.pop("_id")

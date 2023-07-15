@@ -1,6 +1,6 @@
 import os
 from collections.abc import Iterator
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Set, Tuple, Union
 
 from motor.motor_asyncio import (
     AsyncIOMotorClient,
@@ -14,7 +14,7 @@ DEFAULT_DATABASE_NAME = "test"
 
 
 class Collection:
-    def __init__(self, collection: AsyncIOMotorCollection) -> None:
+    def __init__(self, collection: AsyncIOMotorCollection) -> None:  # type: ignore
         self.collection = collection
 
     def __getattr__(self, name: str) -> Any:
@@ -33,7 +33,7 @@ class Collection:
 
 
 class Database:
-    def __init__(self, db: AsyncIOMotorDatabase) -> None:
+    def __init__(self, db: AsyncIOMotorDatabase) -> None:  # type: ignore
         self.db = db
         self.collections: dict[str, Collection] = {}
 
@@ -41,7 +41,7 @@ class Database:
         try:
             return self.collections[name]
         except KeyError:
-            collection: AsyncIOMotorCollection = self.db.get_collection(name)
+            collection: AsyncIOMotorCollection = self.db.get_collection(name)  # type: ignore
             self.collections[name] = Collection(collection)
             return self.collections[name]
 
@@ -58,7 +58,7 @@ class Database:
             f"port={self.client.PORT})"
         )
 
-    async def drop_collection(self, collection: str | Collection):
+    async def drop_collection(self, collection: Union[str, Collection]):
         """删除集合"""
         name = collection if isinstance(collection, str) else collection.name
         await self.db.drop_collection(name)
@@ -69,12 +69,12 @@ class Database:
         return self.db.name
 
     @property
-    def client(self) -> AsyncIOMotorClient:
+    def client(self) -> AsyncIOMotorClient:  # type: ignore
         return self.db.client
 
 
 class Client:
-    _clients: ClassVar[set[Self]] = set()
+    _clients: ClassVar[Set[Self]] = set()
 
     def __init__(self, uri: str = DEFAULT_CONNECT_URI, **kwargs: Any) -> None:
         kwargs.setdefault("host", uri)
@@ -86,7 +86,7 @@ class Client:
         try:
             return self.databases[name]
         except KeyError:
-            db: AsyncIOMotorDatabase = self.client.get_database(name)
+            db: AsyncIOMotorDatabase = self.client.get_database(name)  # type: ignore
             self.databases[name] = Database(db)
             return self.databases[name]
 
@@ -104,14 +104,14 @@ class Client:
         self.client.close()
         self.__class__._clients.remove(self)
 
-    async def drop_database(self, database: str | Database):
+    async def drop_database(self, database: Union[str, Database]):
         """删除数据库"""
         name = database if isinstance(database, str) else database.name
         await self.client.drop_database(name)
         self.databases.pop(name, None)
 
     @classmethod
-    def get_database(cls, db: Database | str | None = None) -> Database:
+    def get_database(cls, db: Union[Database, str, None] = None) -> Database:
         """获取数据库"""
         try:
             client = next(iter(cls._clients))
@@ -143,5 +143,5 @@ class Client:
         return self.client.PORT
 
     @property
-    def address(self) -> tuple[str, int]:
+    def address(self) -> Tuple[str, int]:
         return self.client.address

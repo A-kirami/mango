@@ -1,5 +1,5 @@
 import asyncio
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Set, Optional
 
 from mango.drive import DEFAULT_CONNECT_URI, Client
 from mango.utils import get_indexes, to_snake_case
@@ -8,7 +8,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from mango.models import Document
 
 
-async def init_model(model: type["Document"], *, revise_index=False) -> None:
+async def init_model(model: "Document", *, revise_index=False) -> None:
     """初始化文档模型"""
     meta = model.__meta__
     db = Client.get_database(meta.database)
@@ -16,7 +16,7 @@ async def init_model(model: type["Document"], *, revise_index=False) -> None:
     await init_index(model, revise_index=revise_index)
 
 
-async def init_index(model: type["Document"], *, revise_index=False) -> None:
+async def init_index(model: "Document", *, revise_index=False) -> None:
     """初始化文档索引"""
     required = ["_id_"]
     if indexes := list(get_indexes(model)):
@@ -28,12 +28,12 @@ async def init_index(model: type["Document"], *, revise_index=False) -> None:
 
 
 class Mango:
-    _document_models: ClassVar[set[type["Document"]]] = set()
+    _document_models: ClassVar[Set["Document"]] = set()
 
     @classmethod
     async def init(
         cls,
-        db: str | None = None,
+        db: Optional[str] = None,
         *,
         uri: str = DEFAULT_CONNECT_URI,
         revise_index=False,
@@ -50,7 +50,7 @@ class Mango:
     @classmethod
     def connect(
         cls,
-        db: str | None = None,
+        db: Optional[str] = None,
         /,
         uri: str = DEFAULT_CONNECT_URI,
         **kwargs: Any,
@@ -68,6 +68,6 @@ class Mango:
                 client.close()
 
     @classmethod
-    def register_model(cls, model: type["Document"]) -> None:
+    def register_model(cls, model: "Document") -> None:
         """注册模型"""
         cls._document_models.add(model)

@@ -137,3 +137,4 @@ __pypackages__/
 .pdm.toml
 pdm.lock
 poetry.lock
+.vscode

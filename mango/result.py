@@ -58,7 +58,7 @@ class FindResult(Generic[T_Model]):
             yield self.model.from_doc(document)
 
     @property
-    def cursor(self) -> AsyncIOMotorCursor:
+    def cursor(self) -> AsyncIOMotorCursor: # type: ignore
         return self.collection.find(self.filter, **self.options.kwdict())
 
     @property
@@ -173,7 +173,7 @@ class FindResult(Generic[T_Model]):
 
 
 class AggregateResult:
-    def __init__(self, cursor: AsyncIOMotorLatentCommandCursor) -> None:
+    def __init__(self, cursor: AsyncIOMotorLatentCommandCursor) -> None: # type: ignore
         self.cursor = cursor
 
     def __await__(self) -> Generator[None, None, list[dict[str, Any]]]:
