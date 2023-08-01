@@ -59,6 +59,9 @@ target-version = ["py310"]
 asyncio_mode = "auto"
 addopts = "--cov=mango --cov-report=html --cov-report=xml --junit-xml=results.xml --cov-report=term-missing --alluredir=allure_report --clean-alluredir"
 
+[tool.pdm.scripts]
+post_install = "pre-commit install"
+
 [build-system]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
