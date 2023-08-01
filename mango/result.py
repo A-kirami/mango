@@ -14,13 +14,14 @@ from typing import (
 
 from motor.motor_asyncio import AsyncIOMotorCursor, AsyncIOMotorLatentCommandCursor
 from pydantic import BaseModel
-from pymongo.results import DeleteResult
 
 from mango.expression import Expression, ExpressionField
 from mango.index import Order
 from mango.utils import any_check, is_sequence, validate_fields
 
 if TYPE_CHECKING:  # pragma: no cover
+    from pymongo.results import DeleteResult
+
     from mango.models import Document
 
 T_Model = TypeVar("T_Model", bound="Document")
@@ -123,7 +124,7 @@ class FindResult(Generic[T_Model]):
 
     def sort(self, *orders: Any) -> "FindResult[T_Model]":
         """对查询文档流进行排序"""
-        if not (len(orders) != 2 or any_check(orders, is_sequence)):
+        if not (len(orders) != 2 or any_check(orders, is_sequence)):  # noqa: PLR2004
             orders = (orders,)
         for order in orders:
             direction = Order.ASC
@@ -171,6 +172,7 @@ class FindResult(Generic[T_Model]):
         """
         if document := await self.collection.find_one(self.filter):
             return self.model.from_doc(document)
+        return None
 
     async def delete(self) -> int:
         """删除符合条件的文档"""

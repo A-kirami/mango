@@ -6,33 +6,31 @@
     <h1 align="center">Mango</h1>
     <p align="center">🥭 带有类型提示的 Python 异步 MongoDB 对象文档映射器</p>
 </p>
-    <p align="center">
-        <a href="./LICENSE">
-            <img src="https://img.shields.io/github/license/A-kirami/mango.svg" alt="license">
-        </a>
-        <a href="https://pypi.python.org/pypi/mango-odm">
-            <img src="https://img.shields.io/pypi/v/mango-odm.svg" alt="pypi">
-        </a>
-        <a href="https://www.python.org/">
-            <img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="python">
-        </a>
-    </p>
-    <p align="center">
-        <a href="#-示例">查看演示</a>
-        ·
-        <a href="https://github.com/A-kirami/mango/issues/new?assignees=&labels=bug&template=bug_report.yml&title=%5BBUG%5D%3A+">错误报告</a>
-        ·
-        <a href="https://github.com/A-kirami/mango/issues/new?assignees=&labels=enhancement&template=feature_request.yml&title=%5BFeature%5D%3A+">功能请求</a>
-    </p>
-    <p align="center">
-        <strong>简体中文</strong>
-        ·
-        <a href="/docs/README_EN.md">English</a>
-        ·
-        <a href="/docs/README_JA.md">日本語</a>
-    </p>
+<p align="center">
+    <a href="./LICENSE">
+        <img src="https://img.shields.io/github/license/A-kirami/mango.svg" alt="license">
+    </a>
+    <a href="https://pypi.python.org/pypi/mango-odm">
+        <img src="https://img.shields.io/pypi/v/mango-odm.svg" alt="pypi">
+    </a>
+    <a href="https://www.python.org/">
+        <img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="python">
+    </a>
 </p>
 <p align="center">
+    <a href="#-示例">查看演示</a>
+    ·
+    <a href="https://github.com/A-kirami/mango/issues/new?assignees=&labels=bug&template=bug_report.yml&title=%5BBUG%5D%3A+">错误报告</a>
+    ·
+    <a href="https://github.com/A-kirami/mango/issues/new?assignees=&labels=enhancement&template=feature_request.yml&title=%5BFeature%5D%3A+">功能请求</a>
+</p>
+<p align="center">
+    <strong>简体中文</strong>
+    ·
+    <a href="/docs/README_EN.md">English</a>
+    ·
+    <a href="/docs/README_JA.md">日本語</a>
+</p>
 
 ## 🔖 目录
 

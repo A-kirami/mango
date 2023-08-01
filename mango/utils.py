@@ -37,8 +37,7 @@ def all_check(
     """
     if isinstance(type_or_func, Callable):
         return all(type_or_func(obj) for obj in iter_obj)
-    else:
-        return all(isinstance(obj, type_or_func) for obj in iter_obj)
+    return all(isinstance(obj, type_or_func) for obj in iter_obj)
 
 
 def any_check(
@@ -51,8 +50,7 @@ def any_check(
     """
     if isinstance(type_or_func, Callable):
         return any(type_or_func(obj) for obj in iter_obj)
-    else:
-        return any(isinstance(obj, type_or_func) for obj in iter_obj)
+    return any(isinstance(obj, type_or_func) for obj in iter_obj)
 
 
 def is_sequence(
@@ -81,7 +79,7 @@ def validate_fields(model: "Document", input_data: Dict[str, Any]) -> Dict[str, 
     return values
 
 
-def add_fields(model: "Document", **field_definitions: Any):
+def add_fields(model: "Document", **field_definitions: Any) -> None:
     """动态添加字段
 
     来源见: https://github.com/pydantic/pydantic/issues/1937

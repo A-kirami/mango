@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 from pydantic.fields import ModelField
 from typing_extensions import Self
 
+from mango.fields import FieldInfo
+
 if TYPE_CHECKING:  # pragma: no cover
     from mango.models import Document
 
@@ -68,11 +70,14 @@ class ExpressionField:
         return super().__hash__()
 
     def __repr__(self) -> str:
-        return f"ExpressionField(name={str(self)}, type={self.field.type_.__name__})"
+        return f"ExpressionField(name={self!s}, type={self.field._type_display()})"
 
     def __str__(self) -> str:
         names = [p[0] for p in self.parents]
-        names.append(self.field.name)
+        if isinstance(finfo := self.field.field_info, FieldInfo) and finfo.primary_key:
+            names.append("_id")
+        else:
+            names.append(self.field.name)
         return ".".join(names)
 
     def __getattr__(self, name: str) -> Any:
@@ -107,11 +112,11 @@ class Expression:
         value = {str(self.operator): self.unpack(self.value)}
         return {str(self.key): value} if self.key else value
 
-    def unpack(self, value: Any):
+    def unpack(self, value: Any) -> Any:
         # TODO: 将嵌入文档模型转换为 mongodb 文档形式
         return value
 
-    def merge(self, operator: Operators):
+    def merge(self, operator: Operators) -> Any:
         return self.value if self.operator is operator else [self]
 
 

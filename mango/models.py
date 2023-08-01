@@ -15,14 +15,10 @@ from typing import (
 
 import bson
 from bson import ObjectId
-from bson.codec_options import CodecOptions
 from pydantic import BaseModel
-from pydantic.fields import ModelField
 from pydantic.main import ModelMetaclass
-from pymongo.results import DeleteResult, UpdateResult
 from typing_extensions import Self, dataclass_transform
 
-from mango.drive import Collection, Database
 from mango.encoder import Encoder
 from mango.expression import Expression, ExpressionField, Operators
 from mango.fields import Field, FieldInfo, ObjectIdField
@@ -31,6 +27,13 @@ from mango.result import AggregateResult, FindMapping, FindResult
 from mango.source import Mango
 from mango.stage import Pipeline
 from mango.utils import add_fields, all_check, validate_fields
+
+if TYPE_CHECKING:
+    from bson.codec_options import CodecOptions
+    from pydantic.fields import ModelField
+    from pymongo.results import DeleteResult, UpdateResult
+
+    from mango.drive import Collection, Database
 
 operators = tuple(str(i) for i in Operators)
 
@@ -88,7 +91,7 @@ class MetaDocument(ModelMetaclass):
         bases: Tuple[Any, ...],
         attrs: Dict[str, Any],
         **kwargs: Any,
-    ):
+    ) -> Any:
         meta = MetaConfig
 
         for base in reversed(bases):
@@ -141,7 +144,7 @@ class MetaEmbeddedDocument(ModelMetaclass):
         bases: Tuple[Any, ...],
         attrs: Dict[str, Any],
         **kwargs: Any,
-    ):
+    ) -> Any:
         scls = super().__new__(cls, name, bases, attrs, **kwargs)
         for fname, field in scls.__fields__.items():
             setattr(scls, fname, ExpressionField(field, []))
@@ -246,8 +249,7 @@ class Document(BaseModel, metaclass=MetaDocument):
         """使用表达式查询文档"""
         if all_check(args, (Expression, Mapping)):
             return FindResult(cls, *args)  # type: ignore
-        else:
-            raise TypeError("查询表达式类型不正确")
+        raise TypeError("查询表达式类型不正确")
 
     @classmethod
     async def get(cls, _id: Any) -> Optional[Self]:

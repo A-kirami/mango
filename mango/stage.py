@@ -36,7 +36,7 @@ class Pipeline(list):
 
         [$bucket (aggregation)](https://www.mongodb.com/docs/manual/reference/operator/aggregation/bucket/)
         """
-        if len(boundaries) < 2:
+        if len(boundaries) < 2:  # noqa: PLR2004
             raise ValueError("必须至少指定两个边界值")
         if sorted(boundaries) != boundaries:
             raise ValueError("指定的值必须以升序排列")

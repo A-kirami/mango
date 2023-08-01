@@ -36,7 +36,7 @@ class Mango:
         db: Optional[str] = None,
         *,
         uri: str = DEFAULT_CONNECT_URI,
-        revise_index=False,
+        revise_index: bool = False,
         **kwargs: Any,
     ) -> None:
         if db or uri or not Client._clients:
