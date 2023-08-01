@@ -63,7 +63,7 @@ def flat_filter(data: Mapping[str, Any]) -> Dict[str, Any]:
     flatted = {}
     for key, value in data.items():
         if key.startswith(operators):
-            flatted.update(flat_filter(reduce(lambda x, y: x | y, value)))
+            flatted |= flat_filter(reduce(lambda x, y: x | y, value))
         elif "." in key:
             parent, child = key.split(".", maxsplit=1)
             flatted[parent] = flat_filter({child: value})

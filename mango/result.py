@@ -84,7 +84,7 @@ class FindResult(Generic[T_Model]):
                 condition = condition.struct()
             else:
                 raise TypeError("查询过滤条件不正确, 应为映射或表达式")
-            compiled.update(self._compile(condition))
+            compiled |= self._compile(condition)
         return compiled
 
     def _compile(
