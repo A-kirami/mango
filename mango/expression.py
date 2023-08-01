@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING, Any
 from pydantic.fields import ModelField
 from typing_extensions import Self
 
+from mango.fields import FieldInfo
+
 if TYPE_CHECKING:  # pragma: no cover
     from mango.models import Document
 
@@ -72,7 +74,10 @@ class ExpressionField:
 
     def __str__(self) -> str:
         names = [p[0] for p in self.parents]
-        names.append(self.field.name)
+        if isinstance(finfo := self.field.field_info, FieldInfo) and finfo.primary_key:
+            names.append("_id")
+        else:
+            names.append(self.field.name)
         return ".".join(names)
 
     def __getattr__(self, name: str) -> Any:
