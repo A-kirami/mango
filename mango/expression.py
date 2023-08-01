@@ -68,7 +68,7 @@ class ExpressionField:
         return super().__hash__()
 
     def __repr__(self) -> str:
-        return f"ExpressionField(name={str(self)}, type={self.field.type_.__name__})"
+        return f"ExpressionField(name={self!s}, type={self.field._type_display()})"
 
     def __str__(self) -> str:
         names = [p[0] for p in self.parents]
