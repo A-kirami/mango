@@ -52,8 +52,32 @@ test = [
   "Faker>=19.2.0",
 ]
 
+[tool.poetry.dependencies]
+python = "^3.8"
+motor = "^3.0.0"
+pydantic = "^1.10.0"
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.0.0"
+isort = "^5.10.1"
+
+[tool.poetry.group.test]
+optional = true
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.1.2"
+pytest-cov = "^4.0.0"
+allure-pytest = "^2.9.45"
+pytest-asyncio = "^0.21.0"
+hypothesis = "^6.43.3"
+pytest-sugar = "^0.9.5"
+Faker = "^18.0.0"
+
 [tool.black]
-target-version = ["py310"]
+target-version = ["py38"]
 
 [tool.ruff]
 select = [
@@ -103,6 +127,7 @@ ignore = [
   "RUF003",
 ]
 unfixable = ["F401", "F841", "ERA001"]
+target-version = "py38"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
