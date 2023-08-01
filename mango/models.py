@@ -55,8 +55,8 @@ def is_need_default_pk(
 
 def set_default_pk(model: "Document") -> None:
     value = Field(default_factory=ObjectId, allow_mutation=False, init=False)
-    add_fields(model, id=(ObjectIdField, value)) # type: ignore
-    model.__primary_key__ = "id" # type: ignore
+    add_fields(model, id=(ObjectIdField, value))  # type: ignore
+    model.__primary_key__ = "id"  # type: ignore
 
 
 def flat_filter(data: Mapping[str, Any]) -> Dict[str, Any]:
@@ -96,7 +96,7 @@ class MetaDocument(ModelMetaclass):
 
         for base in reversed(bases):
             if base != BaseModel and issubclass(base, Document):
-                meta = inherit_meta(base.__meta__, MetaConfig) # type: ignore
+                meta = inherit_meta(base.__meta__, MetaConfig)  # type: ignore
 
         kwargs.setdefault("database", kwargs.pop("db", None))
 
