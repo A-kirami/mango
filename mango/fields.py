@@ -1,5 +1,13 @@
-from collections.abc import Callable, Generator, Mapping, Set
-from typing import Any, AnyStr
+from typing import (
+    AbstractSet,
+    Any,
+    AnyStr,
+    Callable,
+    Generator,
+    Mapping,
+    Optional,
+    Union,
+)
 
 from bson import ObjectId
 from pydantic.fields import FieldInfo as PDFieldInfo
@@ -7,12 +15,14 @@ from pydantic.fields import Undefined
 from pydantic.typing import NoArgAnyCallable
 from typing_extensions import Self
 
-from mango.index import Index, IndexType
+from mango.index import Attr, Index, Order
 
 
 class ObjectIdField(ObjectId):
     @classmethod
-    def __get_validators__(cls) -> Generator[Callable[[AnyStr], Self], None, None]:
+    def __get_validators__(
+        cls,
+    ) -> Generator[Callable[[str], "ObjectIdField"], None, None]:
         yield cls.validate
 
     @classmethod
@@ -29,8 +39,8 @@ class ObjectIdField(ObjectId):
 class FieldInfo(PDFieldInfo):
     def __init__(self, default: Any = Undefined, **kwargs: Any) -> None:
         self.primary_key: bool = kwargs.pop("primary_key", False)
-        self.index: bool | IndexType | Index | None = kwargs.pop("index", None)
-        self.expire: int | None = kwargs.pop("expire", None)
+        self.index: Union[bool, Order, Attr, Index, None] = kwargs.pop("index", None)  # type: ignore
+        self.expire: Optional[int] = kwargs.pop("expire", None)
         self.unique: bool = kwargs.pop("unique", None)
         super().__init__(default=default, **kwargs)
 
@@ -38,32 +48,36 @@ class FieldInfo(PDFieldInfo):
 def Field(
     default: Any = Undefined,
     *,
-    default_factory: NoArgAnyCallable | None = None,
-    alias: str | None = None,
-    title: str | None = None,
-    description: str | None = None,
-    exclude: Set[int | str] | Mapping[int | str, Any] | Any | None = None,
-    include: Set[int | str] | Mapping[int | str, Any] | Any | None = None,
-    const: bool | None = None,
-    gt: float | None = None,
-    ge: float | None = None,
-    lt: float | None = None,
-    le: float | None = None,
-    multiple_of: float | None = None,
-    max_digits: int | None = None,
-    decimal_places: int | None = None,
-    min_items: int | None = None,
-    max_items: int | None = None,
-    unique_items: bool | None = None,
-    min_length: int | None = None,
-    max_length: int | None = None,
+    default_factory: Optional[NoArgAnyCallable] = None,
+    alias: Optional[str] = None,
+    title: Optional[str] = None,
+    description: Optional[str] = None,
+    exclude: Optional[
+        Union[AbstractSet[Union[int, str]], Mapping[Union[int, str], Any], Any]
+    ] = None,
+    include: Optional[
+        Union[AbstractSet[Union[int, str]], Mapping[Union[int, str], Any], Any]
+    ] = None,
+    const: Optional[bool] = None,
+    gt: Optional[float] = None,
+    ge: Optional[float] = None,
+    lt: Optional[float] = None,
+    le: Optional[float] = None,
+    multiple_of: Optional[float] = None,
+    max_digits: Optional[int] = None,
+    decimal_places: Optional[int] = None,
+    min_items: Optional[int] = None,
+    max_items: Optional[int] = None,
+    unique_items: Optional[bool] = None,
+    min_length: Optional[int] = None,
+    max_length: Optional[int] = None,
     allow_mutation: bool = True,
-    regex: str | None = None,
-    discriminator: str | None = None,
+    regex: Optional[str] = None,
+    discriminator: Optional[str] = None,
     repr: bool = True,
     primary_key: bool = False,
-    index: bool | IndexType | Index | None = None,
-    expire: int | None = None,
+    index: Optional[Union[bool, Order, Attr, Index]] = None,  # type: ignore
+    expire: Optional[int] = None,
     unique: bool = False,
     **extra: Any,
 ) -> Any:

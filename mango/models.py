@@ -1,7 +1,17 @@
 import contextlib
-from collections.abc import Mapping, MutableMapping, Sequence
 from functools import reduce
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Dict,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import bson
 from bson import ObjectId
@@ -29,7 +39,7 @@ operators = tuple(str(i) for i in Operators)
 
 
 def is_need_default_pk(
-    bases: tuple[type[Any], ...], annotate: dict[str, Any] | None = None
+    bases: Tuple[Any, ...], annotate: Optional[Dict[str, Any]] = None
 ) -> bool:
     # 未定义任何字段
     if not annotate:
@@ -43,13 +53,13 @@ def is_need_default_pk(
     return not any(getattr(base, "id", None) for base in bases)
 
 
-def set_default_pk(model: type["Document"]) -> None:
+def set_default_pk(model: "Document") -> None:
     value = Field(default_factory=ObjectId, allow_mutation=False, init=False)
-    add_fields(model, id=(ObjectIdField, value))
-    model.__primary_key__ = "id"
+    add_fields(model, id=(ObjectIdField, value))  # type: ignore
+    model.__primary_key__ = "id"  # type: ignore
 
 
-def flat_filter(data: Mapping[str, Any]) -> dict[str, Any]:
+def flat_filter(data: Mapping[str, Any]) -> Dict[str, Any]:
     flatted = {}
     for key, value in data.items():
         if key.startswith(operators):
@@ -78,15 +88,15 @@ class MetaDocument(ModelMetaclass):
     def __new__(
         cls,
         cname: str,
-        bases: tuple[type[Any], ...],
-        attrs: dict[str, Any],
+        bases: Tuple[Any, ...],
+        attrs: Dict[str, Any],
         **kwargs: Any,
     ) -> Any:
         meta = MetaConfig
 
         for base in reversed(bases):
             if base != BaseModel and issubclass(base, Document):
-                meta = inherit_meta(base.__meta__, MetaConfig)
+                meta = inherit_meta(base.__meta__, MetaConfig)  # type: ignore
 
         kwargs.setdefault("database", kwargs.pop("db", None))
 
@@ -131,8 +141,8 @@ class MetaEmbeddedDocument(ModelMetaclass):
     def __new__(
         cls,
         name: str,
-        bases: tuple[type[Any], ...],
-        attrs: dict[str, Any],
+        bases: Tuple[Any, ...],
+        attrs: Dict[str, Any],
         **kwargs: Any,
     ) -> Any:
         scls = super().__new__(cls, name, bases, attrs, **kwargs)
@@ -146,8 +156,8 @@ class MetaEmbeddedDocument(ModelMetaclass):
 class Document(BaseModel, metaclass=MetaDocument):
     if TYPE_CHECKING:  # pragma: no cover
         id: ClassVar[ObjectId]
-        __fields__: ClassVar[dict[str, ModelField]]
-        __meta__: ClassVar[type[MetaConfig]]
+        __fields__: ClassVar[Dict[str, ModelField]]
+        __meta__: ClassVar[MetaConfig]
         __encoder__: ClassVar[CodecOptions]
         __collection__: ClassVar[Collection]
         __primary_key__: ClassVar[str]
@@ -155,8 +165,8 @@ class Document(BaseModel, metaclass=MetaDocument):
         def __init_subclass__(
             cls,
             *,
-            name: str | None = None,
-            db: Database | str | None = None,
+            name: Optional[str] = None,
+            db: Optional[Union[Database, str]] = None,
             **kwargs: Any,
         ) -> None:
             ...
@@ -198,7 +208,7 @@ class Document(BaseModel, metaclass=MetaDocument):
         result: DeleteResult = await self.__collection__.delete_one({"_id": self.pk})
         return bool(result.deleted_count)
 
-    def doc(self, **kwargs: Any) -> dict[str, Any]:
+    def doc(self, **kwargs: Any) -> Dict[str, Any]:
         """转换为 MongoDB 文档"""
         kwargs["by_alias"] = self.__meta__.by_alias
         data = self.dict(**kwargs)
@@ -209,7 +219,7 @@ class Document(BaseModel, metaclass=MetaDocument):
         return bson.decode(bson.encode(data, codec_options=self.__encoder__))
 
     @classmethod
-    def from_doc(cls, document: dict[str, Any]) -> Self:
+    def from_doc(cls, document: Dict[str, Any]) -> Self:
         """从文档构建模型实例"""
         with contextlib.suppress(KeyError):
             document[cls.__primary_key__] = document.pop("_id")
@@ -222,7 +232,10 @@ class Document(BaseModel, metaclass=MetaDocument):
 
     @classmethod
     def aggregate(
-        cls, pipeline: Pipeline | Sequence[Mapping[str, Any]], *args: Any, **kwargs: Any
+        cls,
+        pipeline: Union[Pipeline, Sequence[Mapping[str, Any]]],
+        *args: Any,
+        **kwargs: Any,
     ) -> AggregateResult:
         """聚合查询"""
         cursor = cls.__collection__.aggregate(pipeline, *args, **kwargs)
@@ -231,23 +244,23 @@ class Document(BaseModel, metaclass=MetaDocument):
     @classmethod
     def find(
         cls,
-        *args: FindMapping | Expression | bool,
+        *args: Union[FindMapping, Expression, bool],
     ) -> FindResult[Self]:
         """使用表达式查询文档"""
-        if all_check(args, Expression | Mapping):
+        if all_check(args, (Expression, Mapping)):
             return FindResult(cls, *args)  # type: ignore
         raise TypeError("查询表达式类型不正确")
 
     @classmethod
-    async def get(cls, _id: Any) -> Self | None:
+    async def get(cls, _id: Any) -> Optional[Self]:
         """通过主键查询文档"""
         return await cls.find({"_id": _id}).get()
 
     @classmethod
     async def get_or_create(
         cls,
-        *args: FindMapping | Expression | bool,
-        defaults: FindMapping | Self | None = None,
+        *args: Union[FindMapping, Expression, bool],
+        defaults: Optional[Union[FindMapping, Self]] = None,
     ) -> Self:
         """获取文档, 如果不存在, 则创建"""
         result: FindResult[Self] = FindResult(cls, *args)  # type: ignore

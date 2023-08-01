@@ -179,3 +179,10 @@ pyrightconfig.json
 
 # VS Code Counter
 .VSCodeCounter/
+
+# Package Manager
+__pypackages__/
+.pdm.toml
+pdm.lock
+poetry.lock
+.vscode

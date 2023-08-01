@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 from pydantic.fields import ModelField
 from typing_extensions import Self
@@ -43,7 +43,7 @@ class Operators(Enum):
 
 class ExpressionField:
     def __init__(
-        self, field: ModelField, parents: list[tuple[str, "Document"]]
+        self, field: ModelField, parents: List[Tuple[str, "Document"]]
     ) -> None:
         self.field = field
         self.parents = parents
@@ -94,7 +94,7 @@ class ExpressionField:
 
 @dataclass
 class Expression:
-    key: ExpressionField | None
+    key: Optional[ExpressionField]
     operator: Operators
     value: Any
 
@@ -107,7 +107,7 @@ class Expression:
     def __repr__(self) -> str:
         return f"Expression({self.struct()})"
 
-    def struct(self) -> dict[str, Any]:
+    def struct(self) -> Dict[str, Any]:
         """转换为 MongoDB 查询结构"""
         value = {str(self.operator): self.unpack(self.value)}
         return {str(self.key): value} if self.key else value
@@ -157,26 +157,26 @@ class OPR:
         return Expression(self.key, Operators.REGEX, values)
 
     @classmethod
-    def or_(cls, *expressions: Expression | bool) -> Expression:
+    def or_(cls, *expressions: Union[Expression, bool]) -> Expression:
         merge = cls._merge(Operators.OR, expressions)
         return Expression(None, *merge)
 
     @classmethod
-    def and_(cls, *expressions: Expression | bool) -> Expression:
+    def and_(cls, *expressions: Union[Expression, bool]) -> Expression:
         merge = cls._merge(Operators.AND, expressions)
         return Expression(None, *merge)
 
     @classmethod
-    def nor(cls, *expressions: Expression | bool) -> Expression:
+    def nor(cls, *expressions: Union[Expression, bool]) -> Expression:
         """既不……也不……"""
         merge = cls._merge(Operators.NOR, expressions)
         return Expression(None, *merge)
 
     @classmethod
     def _merge(
-        cls, operator: Operators, expressions: tuple[Expression | bool]
-    ) -> tuple[Operators, list[Expression]]:
-        merge_expr: list[Expression] = []
+        cls, operator: Operators, expressions: Tuple[Union[Expression, bool]]
+    ) -> Tuple[Operators, List[Expression]]:
+        merge_expr: List[Expression] = []
         for expression in expressions:
             if not isinstance(expression, Expression):
                 raise TypeError("必须是有效的表达式")

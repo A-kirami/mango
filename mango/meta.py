@@ -1,24 +1,27 @@
-from collections.abc import Sequence
-from typing import Any, ClassVar
+from typing import Any, Mapping, Optional, Sequence, Tuple, Type, Union
 
 from mango.drive import Database
 from mango.encoder import EncodeType
-from mango.index import Index, IndexTuple
+from mango.index import Attr, Index, Order
+
+MetaConfigType = Type["MetaConfig"]
 
 
 class MetaConfig:
-    name: ClassVar[str | None] = None
-    database: ClassVar[Database | str | None] = None
-    indexes: ClassVar[Sequence[str | Index | Sequence[IndexTuple]]] = []
-    bson_encoders: ClassVar[EncodeType] = {}
-    by_alias: ClassVar[bool] = False
+    name: Optional[str] = None
+    database: Optional[Union[Database, str]] = None
+    indexes: Sequence[
+        Union[str, Index, Sequence[Tuple[Union[str, Order, Attr, Mapping[str, Any]]]]]
+    ] = []
+    bson_encoders: EncodeType = {}
+    by_alias: bool = False
 
 
 def inherit_meta(
-    self_config: type[MetaConfig] | None,
-    parent_config: type[MetaConfig],
+    self_config: Union[MetaConfigType, None],
+    parent_config: MetaConfigType,
     **namespace: Any,
-) -> type[MetaConfig]:
+) -> MetaConfigType:
     if not self_config:
         base_classes = (parent_config,)
     elif self_config == parent_config:
