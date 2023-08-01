@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, ClassVar
 
 from mango.drive import Database
 from mango.encoder import EncodeType
@@ -7,11 +7,11 @@ from mango.index import Index, IndexTuple
 
 
 class MetaConfig:
-    name: str | None = None
-    database: Database | str | None = None
-    indexes: Sequence[str | Index | Sequence[IndexTuple]] = []
-    bson_encoders: EncodeType = {}
-    by_alias: bool = False
+    name: ClassVar[str | None] = None
+    database: ClassVar[Database | str | None] = None
+    indexes: ClassVar[Sequence[str | Index | Sequence[IndexTuple]]] = []
+    bson_encoders: ClassVar[EncodeType] = {}
+    by_alias: ClassVar[bool] = False
 
 
 def inherit_meta(

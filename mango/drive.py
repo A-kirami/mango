@@ -58,7 +58,7 @@ class Database:
             f"port={self.client.PORT})"
         )
 
-    async def drop_collection(self, collection: str | Collection):
+    async def drop_collection(self, collection: str | Collection) -> None:
         """删除集合"""
         name = collection if isinstance(collection, str) else collection.name
         await self.db.drop_collection(name)
@@ -104,7 +104,7 @@ class Client:
         self.client.close()
         self.__class__._clients.remove(self)
 
-    async def drop_database(self, database: str | Database):
+    async def drop_database(self, database: str | Database) -> None:
         """删除数据库"""
         name = database if isinstance(database, str) else database.name
         await self.client.drop_database(name)
@@ -120,10 +120,7 @@ class Client:
 
         if isinstance(db, Database):
             return db
-        elif isinstance(db, str):
-            return client[db]
-        else:
-            return client.default_database
+        return client[db] if isinstance(db, str) else client.default_database
 
     @property
     def default_database(self) -> Database:

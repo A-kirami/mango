@@ -1,5 +1,5 @@
-from collections.abc import Callable, Generator, Mapping
-from typing import AbstractSet, Any, AnyStr
+from collections.abc import Callable, Generator, Mapping, Set
+from typing import Any, AnyStr
 
 from bson import ObjectId
 from pydantic.fields import FieldInfo as PDFieldInfo
@@ -42,8 +42,8 @@ def Field(
     alias: str | None = None,
     title: str | None = None,
     description: str | None = None,
-    exclude: AbstractSet[int | str] | Mapping[int | str, Any] | Any | None = None,
-    include: AbstractSet[int | str] | Mapping[int | str, Any] | Any | None = None,
+    exclude: Set[int | str] | Mapping[int | str, Any] | Any | None = None,
+    include: Set[int | str] | Mapping[int | str, Any] | Any | None = None,
     const: bool | None = None,
     gt: float | None = None,
     ge: float | None = None,

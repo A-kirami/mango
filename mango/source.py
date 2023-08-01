@@ -8,7 +8,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from mango.models import Document
 
 
-async def init_model(model: type["Document"], *, revise_index=False) -> None:
+async def init_model(model: type["Document"], *, revise_index: bool = False) -> None:
     """初始化文档模型"""
     meta = model.__meta__
     db = Client.get_database(meta.database)
@@ -16,7 +16,7 @@ async def init_model(model: type["Document"], *, revise_index=False) -> None:
     await init_index(model, revise_index=revise_index)
 
 
-async def init_index(model: type["Document"], *, revise_index=False) -> None:
+async def init_index(model: type["Document"], *, revise_index: bool = False) -> None:
     """初始化文档索引"""
     required = ["_id_"]
     if indexes := list(get_indexes(model)):
@@ -36,7 +36,7 @@ class Mango:
         db: str | None = None,
         *,
         uri: str = DEFAULT_CONNECT_URI,
-        revise_index=False,
+        revise_index: bool = False,
         **kwargs: Any,
     ) -> None:
         if db or uri or not Client._clients:

@@ -112,11 +112,11 @@ class Expression:
         value = {str(self.operator): self.unpack(self.value)}
         return {str(self.key): value} if self.key else value
 
-    def unpack(self, value: Any):
+    def unpack(self, value: Any) -> Any:
         # TODO: 将嵌入文档模型转换为 mongodb 文档形式
         return value
 
-    def merge(self, operator: Operators):
+    def merge(self, operator: Operators) -> Any:
         return self.value if self.operator is operator else [self]
 
 
