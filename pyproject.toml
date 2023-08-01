@@ -1,50 +1,64 @@
-[tool.poetry]
+[project]
 name = "mango-odm"
 version = "0.3.0"
 description = "🥭 Async MongoDB ODM with type hints in Python"
-authors = ["Akirami <akiramiaya@outlook.com>"]
-license = "MIT"
+authors = [{ name = "Akirami", email = "akiramiaya@outlook.com" }]
+requires-python = ">=3.10,<4.0"
+license = { text = "MIT" }
 readme = "README.md"
-repository = "https://github.com/A-kirami/mango"
-packages = [
-  {include = "mango"},
-  {include = "mango/py.typed"},
+keywords = [
+  "mongo",
+  "mongodb",
+  "async",
+  "asyncio",
+  "odm",
+  "types",
+  "pydantic",
+  "motor",
 ]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Framework :: AsyncIO",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Database",
+  "Topic :: Database :: Front-Ends",
+  "Topic :: Software Development",
+  "Topic :: Software Development :: Object Brokering",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Typing :: Typed",
+]
+dependencies = ["motor>=3.2.0", "pydantic>=1.10.12,<2.0.0"]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-motor = "^3.0.0"
-pydantic = "^1.10.0"
+[project.urls]
+repository = "https://github.com/A-kirami/mango"
 
-[tool.poetry.group.dev]
-optional = true
-
-[tool.poetry.group.dev.dependencies]
-black = "^23.0.0"
-isort = "^5.10.1"
-
-[tool.poetry.group.test]
-optional = true
-
-[tool.poetry.group.test.dependencies]
-pytest = "^7.1.2"
-pytest-cov = "^4.0.0"
-allure-pytest = "^2.9.45"
-pytest-asyncio = "^0.21.0"
-hypothesis = "^6.43.3"
-pytest-sugar = "^0.9.5"
-Faker = "^18.0.0"
+[tool.pdm.dev-dependencies]
+dev = ["black>=23.7.0", "ruff>=0.0.280", "pre-commit>=3.3.3"]
+test = [
+  "pytest>=7.4.0",
+  "pytest-cov>=4.1.0",
+  "pytest-sugar>=0.9.7",
+  "allure-pytest>=2.13.2",
+  "pytest-asyncio>=0.21.1",
+  "hypothesis>=6.82.0",
+  "Faker>=19.2.0",
+]
 
 [tool.black]
 target-version = ["py310"]
-
-[tool.isort]
-profile = 'black'
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 addopts = "--cov=mango --cov-report=html --cov-report=xml --junit-xml=results.xml --cov-report=term-missing --alluredir=allure_report --clean-alluredir"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
