@@ -59,8 +59,8 @@ def flat_filter(data: Mapping[str, Any]) -> dict[str, Any]:
             flatted[parent] = flat_filter({child: value})
         else:
             for operator in operators:
-                if ov := value.get(operator):
-                    flatted[key] = ov
+                if isinstance(value, dict) and operator in value:
+                    flatted[key] = value[operator]
     return flatted
 
 
