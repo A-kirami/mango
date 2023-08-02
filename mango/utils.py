@@ -127,7 +127,7 @@ def get_indexes(model: type["Document"]) -> Generator[Index, None, None]:
                     yield Index((name, index))
                 else:
                     yield index
-            elif expire := finfo.expire:
+            elif (expire := finfo.expire) is not None:
                 yield Index(name, expireAfterSeconds=expire)
 
     for index in model.__meta__.indexes:
