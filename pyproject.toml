@@ -1,6 +1,6 @@
 [project]
 name = "mango-odm"
-version = "0.3.1"
+version = "0.3.2"
 description = "🥭 Async MongoDB ODM with type hints in Python"
 authors = [{ name = "Akirami", email = "akiramiaya@outlook.com" }]
 requires-python = ">=3.10,<4.0"
