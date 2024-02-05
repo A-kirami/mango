@@ -125,7 +125,9 @@ class FindResult(Generic[T_Model]):
             try:
                 key, direction = str(key), Order(direction)
             except ValueError as e:
-                raise TypeError("键应为字符串或字段, 排序方向应为 Order 枚举成员") from e
+                raise TypeError(
+                    "键应为字符串或字段, 排序方向应为 Order 枚举成员"
+                ) from e
             else:
                 self.options.sort.append((key, direction))
 

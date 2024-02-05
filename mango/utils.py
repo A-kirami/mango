@@ -21,10 +21,9 @@ def to_snake_case(string: str) -> str:
 
 def all_check(
     iter_obj: Iterable[object],
-    type_or_func: type
-    | UnionType
-    | Callable
-    | tuple[type | UnionType | tuple[Any, ...], ...],
+    type_or_func: (
+        type | UnionType | Callable | tuple[type | UnionType | tuple[Any, ...], ...]
+    ),
 ) -> bool:
     """
     如果可迭代对象中的所有元素为指定类型，则返回True。
@@ -37,10 +36,9 @@ def all_check(
 
 def any_check(
     iter_obj: Iterable[object],
-    type_or_func: type
-    | UnionType
-    | Callable
-    | tuple[type | UnionType | tuple[Any, ...], ...],
+    type_or_func: (
+        type | UnionType | Callable | tuple[type | UnionType | tuple[Any, ...], ...]
+    ),
 ) -> bool:
     """
     如果可迭代对象中的任意元素为指定类型，则返回True。

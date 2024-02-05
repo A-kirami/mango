@@ -158,8 +158,7 @@ class Document(BaseModel, metaclass=MetaDocument):
             name: str | None = None,
             db: Database | str | None = None,
             **kwargs: Any,
-        ) -> None:
-            ...
+        ) -> None: ...
 
     Meta = MetaConfig
 
