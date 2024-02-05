@@ -192,9 +192,11 @@ class Pipeline(list[Mapping[str, Any]]):
         database: str | None = None,
         let: Mapping[str, Any] | None = None,
         on: str | Sequence[str] | None = None,
-        matched: Literal["replace", "keepExisting", "merge", "fail"]
-        | Self
-        | Sequence[Mapping[str, Any]] = "merge",
+        matched: (
+            Literal["replace", "keepExisting", "merge", "fail"]
+            | Self
+            | Sequence[Mapping[str, Any]]
+        ) = "merge",
         not_matched: Literal["insert", "discard", "fail"] = "insert",
     ) -> None:
         """
